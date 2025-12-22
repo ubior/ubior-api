@@ -11,6 +11,7 @@
   "author": "Youssef Tawakal",
   "license": "ISC",
   "dependencies": {
+    "@vercel/blob": "^2.0.0",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "mongoose": "^8.13.0",
