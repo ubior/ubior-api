@@ -1,13 +1,14 @@
 const express = require('express');
 const router = express.Router();
+const authController = require('../controllers/authController');
 
 const test = (req, res) => {
   res.send('Hello World');
 };
 
-router.post('/signup', test);
-router.post('/login', test);
-router.get('/logout', test);
+router.post('/signup', authController.signup);
+router.post('/login', authController.login);
+router.get('/logout', authController.logout);
 
 router.post('/forgotPassword', test);
 router.patch('/resetPassword/:token', test);

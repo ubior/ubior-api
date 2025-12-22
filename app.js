@@ -1,4 +1,6 @@
 const express = require('express');
+const cookieParser = require('cookie-parser');
+
 const app = express();
 
 const userRouter = require('./routes/userRoutes');
@@ -11,6 +13,8 @@ const AppError = require('./utils/appError');
 const globalErrorHandler = require('./middlewares/errorHandler');
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+app.use(cookieParser());
 
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/items', itemRouter);
