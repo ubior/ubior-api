@@ -8,7 +8,7 @@ const closetRouter = require('./routes/closetRoutes');
 const postRouter = require('./routes/postRoutes');
 const reportRouter = require('./routes/reportRoutes');
 const AppError = require('./utils/appError');
-const globalErrorHandler = require('./controllers/errorController');
+const globalErrorHandler = require('./middlewares/errorHandler');
 
 app.use(express.json());
 
