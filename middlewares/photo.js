@@ -1,7 +1,7 @@
 const multer = require('multer');
 const sharp = require('sharp');
-const { put } = require('@vercel/blob');
-
+const { PutObjectCommand } = require('@aws-sdk/client-s3');
+const r2 = require('../utils/r2Client');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 
@@ -22,7 +22,7 @@ const upload = multer({
 
 exports.uploadPhoto = upload.single('photo');
 
-exports.resizePhoto = (model, width, height) => {
+exports.resizePhoto = (model, width, height, bucket) => {
   return catchAsync(async (req, res, next) => {
     if (!req.file) return next();
 
@@ -32,17 +32,18 @@ exports.resizePhoto = (model, width, height) => {
       .jpeg({ quality: 90 })
       .toBuffer();
 
-    const blob = await put(
-      `images/${model}s/${model}-${req[`${model}Id`]}-${Date.now()}.jpeg`,
-      resizedBuffer,
-      {
-        access: 'public',
-        contentType: 'image/jpeg',
-        token: process.env.BLOB_READ_WRITE_TOKEN,
-      }
+    const key = `${req[`${model}Id`]}-${Date.now()}.jpeg`;
+
+    await r2.send(
+      new PutObjectCommand({
+        Bucket: bucket,
+        Key: key,
+        Body: resizedBuffer,
+        ContentType: 'image/jpeg',
+      })
     );
 
-    req.file.blobPath = blob.pathname;
+    req.file.r2key = key;
     next();
   });
 };

@@ -2,6 +2,7 @@ const userService = require('../services/userService');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 const { createSendToken } = require('../middlewares/createToken');
+const responseFactory = require('../factories/responseFactory');
 
 exports.signup = catchAsync(async (req, res, next) => {
   const data = {
@@ -27,7 +28,7 @@ exports.finalizeSignup = catchAsync(async (req, res) => {
 
   if (req.file && req.userId) {
     user = await userService.updateUser(req.userId, {
-      photoBlob: req.file.blobPath,
+      photoBlob: req.file.r2key,
     });
   }
 
@@ -53,4 +54,12 @@ exports.logout = (req, res) => {
     httpOnly: true,
   });
   res.status(200).json({ status: 'success' });
+};
+
+exports.getAuthStatus = (req, res, next) => {
+  if (!req.user) {
+    return next(new AppError('Not authenticated.', 401));
+  }
+
+  res.status(200).json(responseFactory.createResponse({ loggedIn: true }));
 };

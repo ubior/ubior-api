@@ -17,6 +17,14 @@ class UserRepository {
       runValidators: true,
     });
   }
+
+  async findById(userId) {
+    return await User.findById(userId);
+  }
+
+  async findMe(userId) {
+    return await User.findById(userId).select('name username photoBlob bio');
+  }
 }
 
 module.exports = new UserRepository();

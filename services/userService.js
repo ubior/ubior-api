@@ -21,6 +21,22 @@ class UserService {
     }
     return user;
   }
+
+  async getUserById(userId) {
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      throw new AppError('User not found.', 404);
+    }
+    return user;
+  }
+
+  async getMe(userId) {
+    const user = await userRepository.findMe(userId);
+    if (!user) {
+      throw new AppError('User not found.', 404);
+    }
+    return user;
+  }
 }
 
 module.exports = new UserService();
