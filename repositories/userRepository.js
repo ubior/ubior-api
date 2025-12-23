@@ -10,6 +10,13 @@ class UserRepository {
       $or: [{ email: identifier }, { username: identifier }],
     }).select('+password');
   }
+
+  async update(userId, data) {
+    return await User.findByIdAndUpdate(userId, data, {
+      new: true,
+      runValidators: true,
+    });
+  }
 }
 
 module.exports = new UserRepository();

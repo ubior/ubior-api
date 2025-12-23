@@ -19,6 +19,18 @@ exports.signup = catchAsync(async (req, res, next) => {
   req.user = user;
   req.userId = user.id;
 
+  next();
+});
+
+exports.finalizeSignup = catchAsync(async (req, res) => {
+  let user = req.user;
+
+  if (req.file && req.userId) {
+    user = await userService.updateUser(req.userId, {
+      photoBlob: req.file.blobPath,
+    });
+  }
+
   createSendToken(user, 201, req, res);
 });
 

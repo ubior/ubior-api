@@ -13,6 +13,14 @@ class UserService {
     }
     return user;
   }
+
+  async updateUser(userId, data) {
+    const user = await userRepository.update(userId, data);
+    if (!user) {
+      throw new AppError('User not found.', 404);
+    }
+    return user;
+  }
 }
 
 module.exports = new UserService();

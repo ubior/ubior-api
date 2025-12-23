@@ -29,7 +29,7 @@ const userSchema = new mongoose.Schema(
     country: {
       type: String,
     },
-    photo: {
+    photoBlob: {
       type: String,
       default: 'default.png',
     },

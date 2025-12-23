@@ -1,12 +1,19 @@
 const express = require('express');
 const router = express.Router();
+const photo = require('../middlewares/photo');
 const authController = require('../controllers/authController');
 
 const test = (req, res) => {
   res.send('Hello World');
 };
 
-router.post('/signup', authController.signup);
+router.post(
+  '/signup',
+  photo.uploadPhoto,
+  authController.signup,
+  photo.resizePhoto('user', 500, 500),
+  authController.finalizeSignup
+);
 router.post('/login', authController.login);
 router.get('/logout', authController.logout);
 
