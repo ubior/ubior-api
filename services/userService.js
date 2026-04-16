@@ -14,6 +14,14 @@ class UserService {
     return user;
   }
 
+  async logout(userId) {
+    const user = await userRepository.setLoggedOutAt(userId, new Date());
+    if (!user) {
+      throw new AppError('User not found.', 404);
+    }
+    return user;
+  }
+
   async updateUser(userId, data) {
     const user = await userRepository.update(userId, data);
     if (!user) {

@@ -9,7 +9,7 @@ exports.protect = catchAsync(async (req, res, next) => {
 
   if (!token) {
     return next(
-      new AppError('You are not logged in! Please log in to get access.', 401)
+      new AppError('You are not logged in! Please log in to get access.', 401),
     );
   }
 
@@ -20,15 +20,19 @@ exports.protect = catchAsync(async (req, res, next) => {
     return next(
       new AppError(
         'The user belonging to this token does no longer exist.',
-        401
-      )
+        401,
+      ),
     );
   }
 
   if (user.changedPasswordAfter(decoded.iat)) {
     return next(
-      new AppError('User recently changed password! Please log in again.', 401)
+      new AppError('User recently changed password! Please log in again.', 401),
     );
+  }
+
+  if (user.loggedOutAfter(decoded.iat)) {
+    return next(new AppError('Session ended. Please log in again.', 401));
   }
 
   req.user = user;
@@ -40,7 +44,7 @@ exports.restrictTo = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
       return next(
-        new AppError('You do not have permission to perform this action.', 403)
+        new AppError('You do not have permission to perform this action.', 403),
       );
     }
 

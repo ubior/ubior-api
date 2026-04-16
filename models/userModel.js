@@ -96,6 +96,10 @@ const userSchema = new mongoose.Schema(
     passwordChangedAt: Date,
     passwordResetToken: String,
     passwordResetExpires: Date,
+    loggedOutAt: {
+      type: Date,
+      default: null,
+    },
     active: {
       type: Boolean,
       default: true,
@@ -105,7 +109,7 @@ const userSchema = new mongoose.Schema(
   {
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
 userSchema.virtual('closets', {
@@ -144,7 +148,7 @@ userSchema.pre('save', function (next) {
 
 userSchema.methods.correctPassword = async function (
   candidatePassword,
-  userPassword
+  userPassword,
 ) {
   return await bcrypt.compare(candidatePassword, userPassword);
 };
@@ -153,11 +157,17 @@ userSchema.methods.changedPasswordAfter = function (JWTIssuedAt) {
   if (this.passwordChangedAt) {
     const changedTimestamp = parseInt(
       this.passwordChangedAt.getTime() / 1000,
-      10
+      10,
     );
     return JWTIssuedAt < changedTimestamp;
   }
   return false;
+};
+
+userSchema.methods.loggedOutAfter = function (JWTIssuedAt) {
+  if (!this.loggedOutAfter) return false;
+  const loggedOutTimestamp = parseInt(this.loggedOutAt.getTime() / 1000, 10);
+  return JWTIssuedAt < loggedOutTimestamp;
 };
 
 const User = mongoose.model('User', userSchema);

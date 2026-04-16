@@ -40,7 +40,7 @@ exports.login = catchAsync(async (req, res, next) => {
 
   if (!identifier || !password) {
     return next(
-      new AppError('Please provide email/username and password', 400)
+      new AppError('Please provide email/username and password', 400),
     );
   }
 
@@ -48,13 +48,20 @@ exports.login = catchAsync(async (req, res, next) => {
   createSendToken(user, 200, req, res);
 });
 
-exports.logout = (req, res) => {
-  req.cookie('jwt', 'loggedout', {
+exports.logout = catchAsync(async (req, res) => {
+  if (!req.userId) return next(new AppError('Not authenticated.', 401));
+
+  await userService.logout(req.userId);
+
+  res.cookie('jwt', 'loggedout', {
     expires: new Date(Date.now() + 10 * 1000),
     httpOnly: true,
+    secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
+    sameSite: 'lax',
   });
+
   res.status(200).json({ status: 'success' });
-};
+});
 
 exports.getAuthStatus = (req, res, next) => {
   if (!req.user) {

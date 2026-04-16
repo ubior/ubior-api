@@ -4,10 +4,12 @@ const app = require('./app');
 
 const DB = process.env.DATABASE.replace(
   '<DB_PASSWORD>',
-  process.env.DATABASE_PASSWORD
+  process.env.DATABASE_PASSWORD,
 );
 
-mongoose.connect(DB).then(() => console.log('DB connected successfully!'));
+mongoose
+  .connect(process.env.LocalDB ? 'mongodb://localhost:27017/ubior' : DB)
+  .then(() => console.log('DB connected successfully!'));
 
 const port = process.env.PORT || 8080;
 

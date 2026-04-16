@@ -5,6 +5,14 @@ class UserRepository {
     return await User.create(userData);
   }
 
+  async setLoggedOutAt(userId, date) {
+    return await User.findByIdAndUpdate(
+      userId,
+      { loggedOutAt: date },
+      { new: true, runValidators: false },
+    );
+  }
+
   async findByEmailOrUsername(identifier) {
     return await User.findOne({
       $or: [{ email: identifier }, { username: identifier }],

@@ -14,10 +14,9 @@ router.post(
   photo.uploadPhoto,
   authController.signup,
   photo.resizePhoto('user', 500, 500, 'ubior-user-photos'),
-  authController.finalizeSignup
+  authController.finalizeSignup,
 );
 router.post('/login', authController.login);
-router.get('/logout', authController.logout);
 
 router.post('/forgotPassword', test);
 router.patch('/resetPassword/:token', test);
@@ -25,6 +24,7 @@ router.patch('/resetPassword/:token', test);
 // Protect middleware
 router.use(auth.protect);
 
+router.get('/logout', authController.logout);
 router.get('/authStatus', authController.getAuthStatus);
 
 router.get('/me', userController.getMe);
