@@ -17,6 +17,8 @@ router.post(
   authController.finalizeSignup,
 );
 router.post('/login', authController.login);
+router.post('/refreshToken', authController.refreshToken);
+router.get('/logout', authController.logout);
 
 router.post('/forgotPassword', test);
 router.patch('/resetPassword/:token', test);
@@ -24,7 +26,6 @@ router.patch('/resetPassword/:token', test);
 // Protect middleware
 router.use(auth.protect);
 
-router.get('/logout', authController.logout);
 router.get('/authStatus', authController.getAuthStatus);
 
 router.get('/me', userController.getMe);

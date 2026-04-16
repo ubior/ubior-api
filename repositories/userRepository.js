@@ -13,6 +13,31 @@ class UserRepository {
     );
   }
 
+  async findByIdWithRefreshToken(userId) {
+    return await User.findById(userId).select(
+      '+refreshTokenHash +refreshTokenExpiresAt',
+    );
+  }
+
+  async updateRefreshToken(userId, refreshTokenHash, refreshTokenExpiresAt) {
+    return await User.findByIdAndUpdate(
+      userId,
+      { refreshTokenHash, refreshTokenExpiresAt },
+      { new: true, runValidators: false },
+    );
+  }
+
+  async clearRefreshToken(userId) {
+    return await User.findByIdAndUpdate(
+      userId,
+      {
+        refreshTokenHash: null,
+        refreshTokenExpiresAt: null,
+      },
+      { new: true, runValidators: false },
+    );
+  }
+
   async findByEmailOrUsername(identifier) {
     return await User.findOne({
       $or: [{ email: identifier }, { username: identifier }],

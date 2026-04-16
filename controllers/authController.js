@@ -1,7 +1,14 @@
+const jwt = require('jsonwebtoken');
+const { promisify } = require('util');
 const userService = require('../services/userService');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
-const { createSendToken } = require('../middlewares/createToken');
+const {
+  createSendTokens,
+  clearRefreshTokenCookie,
+  signAccessToken,
+  signRefreshToken,
+} = require('../middlewares/createToken');
 const responseFactory = require('../factories/responseFactory');
 
 exports.signup = catchAsync(async (req, res, next) => {
@@ -32,7 +39,7 @@ exports.finalizeSignup = catchAsync(async (req, res) => {
     });
   }
 
-  createSendToken(user, 201, req, res);
+  await createSendTokens(user, 201, req, res);
 });
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -45,20 +52,76 @@ exports.login = catchAsync(async (req, res, next) => {
   }
 
   const user = await userService.login(identifier, password);
-  createSendToken(user, 200, req, res);
+  await createSendTokens(user, 200, req, res);
 });
 
-exports.logout = catchAsync(async (req, res) => {
-  if (!req.userId) return next(new AppError('Not authenticated.', 401));
+exports.refreshToken = catchAsync(async (req, res, next) => {
+  const refreshToken = req.cookies.refreshToken;
 
-  await userService.logout(req.userId);
+  if (!refreshToken) {
+    return next(new AppError('Refresh token missing.', 401));
+  }
 
-  res.cookie('jwt', 'loggedout', {
-    expires: new Date(Date.now() + 10 * 1000),
+  const decoded = await promisify(jwt.verify)(
+    refreshToken,
+    process.env.JWT_REFRESH_SECRET,
+  );
+
+  const user = await userService.validateRefreshToken(decoded.id, refreshToken);
+
+  if (user.changedPasswordAfter(decoded.iat)) {
+    return next(
+      new AppError('User recently changed password! Please log in again.', 401),
+    );
+  }
+
+  if (user.loggedOutAfter && user.loggedOutAfter(decoded.iat)) {
+    return next(new AppError('Session ended. Please log in again.', 401));
+  }
+
+  const newAccessToken = signAccessToken(user.id);
+  const newRefreshToken = signRefreshToken(user.id);
+  const refreshTokenExpiresAt = new Date(
+    Date.now() +
+      process.env.JWT_REFRESH_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
+  );
+
+  await userService.saveRefreshToken(
+    user.id,
+    newRefreshToken,
+    refreshTokenExpiresAt,
+  );
+
+  res.cookie('refreshToken', newRefreshToken, {
+    expires: refreshTokenExpiresAt,
     httpOnly: true,
     secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
     sameSite: 'lax',
   });
+
+  res.status(200).json(
+    responseFactory.createResponse({
+      accessToken: newAccessToken,
+    }),
+  );
+});
+
+exports.logout = catchAsync(async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+
+  if (refreshToken) {
+    try {
+      const decoded = await promisify(jwt.verify)(
+        refreshToken,
+        process.env.JWT_REFRESH_SECRET,
+      );
+
+      await userService.revokeRefreshToken(decoded.id);
+      await userService.logout(decoded.id);
+    } catch (err) {}
+  }
+
+  clearRefreshTokenCookie(res, req);
 
   res.status(200).json({ status: 'success' });
 });

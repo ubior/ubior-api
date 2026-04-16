@@ -5,7 +5,14 @@ const { promisify } = require('util');
 const jwt = require('jsonwebtoken');
 
 exports.protect = catchAsync(async (req, res, next) => {
-  const token = req.cookies.jwt;
+  let token;
+
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer ')
+  ) {
+    token = req.headers.authorization.split(' ')[1];
+  }
 
   if (!token) {
     return next(
@@ -13,7 +20,11 @@ exports.protect = catchAsync(async (req, res, next) => {
     );
   }
 
-  const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+  const decoded = await promisify(jwt.verify)(
+    token,
+    process.env.JWT_ACCESS_SECRET,
+  );
+
   const user = await userService.getUserById(decoded.id);
 
   if (!user) {
@@ -31,7 +42,7 @@ exports.protect = catchAsync(async (req, res, next) => {
     );
   }
 
-  if (user.loggedOutAfter(decoded.iat)) {
+  if (user.loggedOutAfter && user.loggedOutAfter(decoded.iat)) {
     return next(new AppError('Session ended. Please log in again.', 401));
   }
 

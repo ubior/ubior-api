@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 
 const userSchema = new mongoose.Schema(
   {
@@ -105,6 +106,16 @@ const userSchema = new mongoose.Schema(
       default: true,
       select: false,
     },
+    refreshTokenHash: {
+      type: String,
+      default: null,
+      select: false,
+    },
+    refreshTokenExpiresAt: {
+      type: Date,
+      default: null,
+      select: false,
+    },
   },
   {
     toJSON: { virtuals: true },
@@ -168,6 +179,20 @@ userSchema.methods.loggedOutAfter = function (JWTIssuedAt) {
   if (!this.loggedOutAfter) return false;
   const loggedOutTimestamp = parseInt(this.loggedOutAt.getTime() / 1000, 10);
   return JWTIssuedAt < loggedOutTimestamp;
+};
+
+userSchema.methods.hashRefreshToken = function (token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+};
+
+userSchema.methods.correctRefreshToken = function (candidateToken) {
+  if (!this.refreshTokenHash) return false;
+  const hashedCandidate = crypto
+    .createHash('sha256')
+    .update(candidateToken)
+    .digest('hex');
+
+  return hashedCandidate === this.refreshTokenHash;
 };
 
 const User = mongoose.model('User', userSchema);

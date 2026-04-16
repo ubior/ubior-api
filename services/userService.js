@@ -22,6 +22,51 @@ class UserService {
     return user;
   }
 
+  async saveRefreshToken(userId, refreshToken, expiresAt) {
+    const user = await userRepository.findByIdWithRefreshToken(userId);
+    if (!user) {
+      throw new AppError('User not found.', 404);
+    }
+
+    const refreshTokenHash = user.hashRefreshToken(refreshToken);
+
+    return await userRepository.updateRefreshToken(
+      userId,
+      refreshTokenHash,
+      expiresAt,
+    );
+  }
+
+  async validateRefreshToken(userId, refreshToken) {
+    const user = await userRepository.findByIdWithRefreshToken(userId);
+
+    if (!user) {
+      throw new AppError('User not found.', 404);
+    }
+
+    if (!user.refreshTokenHash || !user.refreshTokenExpiresAt) {
+      throw new AppError('Invalid refresh session.', 401);
+    }
+
+    if (user.refreshTokenExpiresAt < new Date()) {
+      throw new AppError('Refresh token expired.', 401);
+    }
+
+    if (!user.correctRefreshToken(refreshToken)) {
+      throw new AppError('Invalid refresh token.', 401);
+    }
+
+    return user;
+  }
+
+  async revokeRefreshToken(userId) {
+    const user = await userRepository.clearRefreshToken(userId);
+    if (!user) {
+      throw new AppError('User not found.', 404);
+    }
+    return user;
+  }
+
   async updateUser(userId, data) {
     const user = await userRepository.update(userId, data);
     if (!user) {
