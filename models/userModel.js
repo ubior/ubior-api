@@ -176,7 +176,7 @@ userSchema.methods.changedPasswordAfter = function (JWTIssuedAt) {
 };
 
 userSchema.methods.loggedOutAfter = function (JWTIssuedAt) {
-  if (!this.loggedOutAfter) return false;
+  if (!this.loggedOutAt) return false;
   const loggedOutTimestamp = parseInt(this.loggedOutAt.getTime() / 1000, 10);
   return JWTIssuedAt < loggedOutTimestamp;
 };
