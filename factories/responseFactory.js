@@ -6,13 +6,6 @@ class ResponseFactory {
       data,
     };
   }
-
-  createAuthResponse(token) {
-    return {
-      status: 'success',
-      token,
-    };
-  }
 }
 
 module.exports = new ResponseFactory();

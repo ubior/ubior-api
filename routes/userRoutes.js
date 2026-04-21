@@ -29,6 +29,14 @@ router.use(auth.protect);
 router.get('/authStatus', authController.getAuthStatus);
 
 router.get('/me', userController.getMe);
+
+router.patch(
+  '/updateMyPhoto',
+  photo.uploadPhoto,
+  photo.resizePhoto('user', 500, 500, 'ubior-user-photos'),
+  userController.updateMyPhoto,
+);
+
 router.patch('/updateMe', test);
 router.patch('/updateMyPassword', test);
 router.delete('/deleteMe', test);

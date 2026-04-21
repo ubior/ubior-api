@@ -16,3 +16,9 @@ exports.getMe = catchAsync(async (req, res) => {
 
   res.status(200).json(responseFactory.createResponse({ me }));
 });
+
+exports.updateMyPhoto = catchAsync(async (req, res) => {
+  await userService.updateUser(req.user.id, { photoBlob: req.file.r2key });
+
+  res.status(200).json({ status: 'success' });
+});
