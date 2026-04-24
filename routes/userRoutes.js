@@ -37,8 +37,18 @@ router.patch(
   userController.updateMyPhoto,
 );
 
-router.patch('/updateMe', test);
+router.patch('/updateMe', userController.updateMe);
+router.patch('/updateMyPrivacy', userController.updateMyPrivacy);
 router.patch('/updateMyPassword', test);
 router.delete('/deleteMe', test);
+
+router.patch('/follow/:username', userController.follow);
+router.patch('/removeFollower/:username', userController.removeFollower);
+
+router.patch(
+  '/acceptRequest/:username',
+  userController.handleRequest('accept'),
+);
+router.patch('/denyRequest/:username', userController.handleRequest('deny'));
 
 module.exports = router;

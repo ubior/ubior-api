@@ -22,3 +22,49 @@ exports.updateMyPhoto = catchAsync(async (req, res) => {
 
   res.status(200).json({ status: 'success' });
 });
+
+exports.updateMe = catchAsync(async (req, res) => {
+  const data = {
+    name: req.body.name,
+    username: req.body.username,
+    email: req.body.email,
+    country: req.body.country,
+    bio: req.body.bio,
+  };
+
+  const user = await userService.updateUser(req.user.id, data);
+
+  res.status(200).json(responseFactory.createResponse({ user }));
+});
+
+exports.updateMyPrivacy = catchAsync(async (req, res) => {
+  const status = await userService.updatePrivacy(req.user.id);
+  res.status(200).json(responseFactory.createResponse({ status }));
+});
+
+exports.follow = catchAsync(async (req, res) => {
+  const status = await userService.followUser(
+    req.user.username,
+    req.params.username,
+  );
+  res.status(200).json(responseFactory.createResponse({ status }));
+});
+
+exports.removeFollower = catchAsync(async (req, res) => {
+  const status = await userService.removeFollower(
+    req.user.username,
+    req.params.username,
+  );
+  res.status(200).json(responseFactory.createResponse({ status }));
+});
+
+exports.handleRequest = (action = 'deny') => {
+  return catchAsync(async (req, res) => {
+    const status = await userService.handleRequest(
+      req.user.username,
+      req.params.username,
+      action,
+    );
+    res.status(200).json(responseFactory.createResponse({ status }));
+  });
+};

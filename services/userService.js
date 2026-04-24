@@ -90,6 +90,122 @@ class UserService {
     }
     return user;
   }
+
+  async updatePrivacy(userId) {
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      throw new AppError('User not found.', 404);
+    }
+
+    const updatedPrivacy = !user.private;
+
+    if (!updatedPrivacy && user.private) {
+      await userRepository.update(userId, {
+        $set: {
+          private: updatedPrivacy,
+          requests: [],
+        },
+        $addToSet: {
+          followers: { $each: user.requests },
+        },
+      });
+
+      for (const requesterId of user.requests) {
+        await userRepository.addFollowing(requesterId, userId);
+      }
+
+      return 'public';
+    }
+
+    const toggled = await userRepository.update(userId, {
+      private: updatedPrivacy,
+    });
+
+    return toggled.private ? 'private' : 'public';
+  }
+
+  #isSameUser(usernameX, usernameY) {
+    if (usernameX === usernameY)
+      throw new AppError('Could not perform this action.', 400);
+  }
+
+  isFollowing(user, target) {
+    return (
+      user.following.includes(target.id) && target.followers.includes(user.id)
+    );
+  }
+
+  async followUser(username, targetUsername) {
+    this.#isSameUser(username, targetUsername);
+
+    const user = await userRepository.findByUsername(username);
+    const targetUser = await userRepository.findByUsername(targetUsername);
+    if (!user || !targetUser) {
+      throw new AppError('User not found.', 404);
+    }
+
+    if (this.isFollowing(user, targetUser)) {
+      await userRepository.removeFollower(targetUser.id, user.id);
+      await userRepository.removeFollowing(user.id, targetUser.id);
+      return 'unfollowed';
+    }
+
+    if (targetUser.private) {
+      if (targetUser.requests.includes(user.id)) {
+        await userRepository.removeRequest(targetUser.id, user.id);
+        return 'unrequested';
+      }
+
+      await userRepository.addRequest(targetUser.id, user.id);
+      return 'requested';
+    }
+
+    await userRepository.addFollower(targetUser.id, user.id);
+    await userRepository.addFollowing(user.id, targetUser.id);
+    return 'followed';
+  }
+
+  async removeFollower(username, targetUsername) {
+    this.#isSameUser(username, targetUsername);
+
+    const user = await userRepository.findByUsername(username);
+    const targetUser = await userRepository.findByUsername(targetUsername);
+    if (!user || !targetUser) {
+      throw new AppError('User not found.', 404);
+    }
+
+    if (this.isFollowing(targetUser, user)) {
+      await userRepository.removeFollower(user.id, targetUser.id);
+      await userRepository.removeFollowing(targetUser.id, user.id);
+      return 'removed';
+    }
+
+    throw new AppError('User not found in followers');
+  }
+
+  async handleRequest(username, targetUsername, action = 'deny') {
+    this.#isSameUser(username, targetUsername);
+
+    const user = await userRepository.findByUsername(username);
+    const targetUser = await userRepository.findByUsername(targetUsername);
+    if (!user || !targetUser) {
+      throw new AppError('User not found.', 404);
+    }
+
+    if (user.requests.includes(targetUser.id)) {
+      await userRepository.removeRequest(user.id, targetUser.id);
+      if (action === 'accept') {
+        await userRepository.addFollower(user.id, targetUser.id);
+        await userRepository.addFollowing(targetUser.id, user.id);
+
+        return 'accepted';
+      } else if (action === 'deny') {
+        return 'denied';
+      }
+      throw new AppError('Could not perform this action.', 400);
+    }
+    throw new AppError('User not found in requests.', 404);
+  }
 }
 
 module.exports = new UserService();
