@@ -55,8 +55,40 @@ class UserRepository {
     return await User.findById(userId);
   }
 
+  async findByUsername(username) {
+    return await User.findOne({ username });
+  }
+
   async findMe(userId) {
     return await User.findById(userId).select('name username photoBlob bio');
+  }
+
+  async addFollower(userId, targetId) {
+    return await this.update(userId, {
+      $addToSet: { followers: targetId },
+    });
+  }
+
+  async addFollowing(userId, targetId) {
+    return await this.update(userId, {
+      $addToSet: { following: targetId },
+    });
+  }
+
+  async addRequest(userId, targetId) {
+    return await this.update(userId, { $addToSet: { requests: targetId } });
+  }
+
+  async removeFollower(userId, targetId) {
+    return await this.update(userId, { $pull: { followers: targetId } });
+  }
+
+  async removeFollowing(userId, targetId) {
+    return await this.update(userId, { $pull: { following: targetId } });
+  }
+
+  async removeRequest(userId, targetId) {
+    return await this.update(userId, { $pull: { requests: targetId } });
   }
 }
 

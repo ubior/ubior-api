@@ -5,7 +5,6 @@ const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 const {
   createSendTokens,
-  clearRefreshTokenCookie,
   signAccessToken,
   signRefreshToken,
 } = require('../middlewares/createToken');
@@ -56,7 +55,7 @@ exports.login = catchAsync(async (req, res, next) => {
 });
 
 exports.refreshToken = catchAsync(async (req, res, next) => {
-  const refreshToken = req.cookies.refreshToken;
+  const refreshToken = req.body.refreshToken;
 
   if (!refreshToken) {
     return next(new AppError('Refresh token missing.', 401));
@@ -82,8 +81,7 @@ exports.refreshToken = catchAsync(async (req, res, next) => {
   const newAccessToken = signAccessToken(user.id);
   const newRefreshToken = signRefreshToken(user.id);
   const refreshTokenExpiresAt = new Date(
-    Date.now() +
-      process.env.JWT_REFRESH_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
+    Date.now() + process.env.JWT_REFRESH_EXPIRES_IN_NUM * 24 * 60 * 60 * 1000,
   );
 
   await userService.saveRefreshToken(
@@ -92,22 +90,16 @@ exports.refreshToken = catchAsync(async (req, res, next) => {
     refreshTokenExpiresAt,
   );
 
-  res.cookie('refreshToken', newRefreshToken, {
-    expires: refreshTokenExpiresAt,
-    httpOnly: true,
-    secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
-    sameSite: 'lax',
-  });
-
   res.status(200).json(
     responseFactory.createResponse({
       accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
     }),
   );
 });
 
 exports.logout = catchAsync(async (req, res) => {
-  const refreshToken = req.cookies.refreshToken;
+  const refreshToken = req.body.refreshToken;
 
   if (refreshToken) {
     try {
@@ -120,8 +112,6 @@ exports.logout = catchAsync(async (req, res) => {
       await userService.logout(decoded.id);
     } catch (err) {}
   }
-
-  clearRefreshTokenCookie(res, req);
 
   res.status(200).json({ status: 'success' });
 });

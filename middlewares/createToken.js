@@ -16,27 +16,8 @@ const signRefreshToken = (id) => {
 
 const getRefreshTokenExpiryDate = () => {
   return new Date(
-    Date.now() +
-      process.env.JWT_REFRESH_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
+    Date.now() + process.env.JWT_REFRESH_EXPIRES_IN_NUM * 24 * 60 * 60 * 1000,
   );
-};
-
-const setRefreshTokenCookie = (res, refreshToken, req) => {
-  res.cookie('refreshToken', refreshToken, {
-    expires: getRefreshTokenExpiryDate(),
-    httpOnly: true,
-    secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
-    sameSite: 'lax',
-  });
-};
-
-const clearRefreshTokenCookie = (res, req) => {
-  res.cookie('refreshToken', 'loggedout', {
-    expires: new Date(Date.now() + 10 * 1000),
-    httpOnly: true,
-    secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
-    sameSite: 'lax',
-  });
 };
 
 const createSendTokens = async (user, statusCode, req, res) => {
@@ -50,11 +31,10 @@ const createSendTokens = async (user, statusCode, req, res) => {
     refreshTokenExpiresAt,
   );
 
-  setRefreshTokenCookie(res, refreshToken, req);
-
   res.status(statusCode).json(
     responseFactory.createResponse({
       accessToken,
+      refreshToken,
     }),
   );
 };
@@ -63,5 +43,4 @@ module.exports = {
   signAccessToken,
   signRefreshToken,
   createSendTokens,
-  clearRefreshTokenCookie,
 };
