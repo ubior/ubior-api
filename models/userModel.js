@@ -101,11 +101,6 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-    active: {
-      type: Boolean,
-      default: true,
-      select: false,
-    },
     refreshTokenHash: {
       type: String,
       default: null,
@@ -155,6 +150,27 @@ userSchema.pre('save', function (next) {
 
   this.passwordChangedAt = Date.now() - 1000;
   next();
+});
+
+userSchema.post('findOneAndDelete', async function (doc) {
+  if (!doc?._id) return;
+
+  await mongoose.model('User').updateMany(
+    {
+      $or: [
+        { followers: doc._id },
+        { following: doc._id },
+        { requests: doc._id },
+      ],
+    },
+    {
+      $pull: {
+        followers: doc._id,
+        following: doc._id,
+        requests: doc._id,
+      },
+    },
+  );
 });
 
 userSchema.methods.correctPassword = async function (

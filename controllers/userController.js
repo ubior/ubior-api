@@ -2,6 +2,7 @@ const responseFactory = require('../factories/responseFactory');
 const catchAsync = require('../utils/catchAsync');
 const userService = require('../services/userService');
 const getSignedImageUrl = require('../utils/getSignedImageUrl');
+const { createSendTokens } = require('../middlewares/createToken');
 
 exports.getMe = catchAsync(async (req, res) => {
   const meDoc = await userService.getMe(req.userId);
@@ -40,6 +41,23 @@ exports.updateMe = catchAsync(async (req, res) => {
 exports.updateMyPrivacy = catchAsync(async (req, res) => {
   const status = await userService.updatePrivacy(req.user.id);
   res.status(200).json(responseFactory.createResponse({ status }));
+});
+
+exports.updateMyPassword = catchAsync(async (req, res) => {
+  const data = {
+    passwordCurrent: req.body.passwordCurrent,
+    password: req.body.password,
+    passwordConfirm: req.body.passwordConfirm,
+  };
+
+  const user = await userService.updatePassword(req.user.id, data);
+
+  createSendTokens(user, 200, req, res);
+});
+
+exports.deleteMe = catchAsync(async (req, res) => {
+  await userService.deleteMe(req.user.id);
+  res.status(204).json(responseFactory.createResponse(null));
 });
 
 exports.follow = catchAsync(async (req, res) => {
