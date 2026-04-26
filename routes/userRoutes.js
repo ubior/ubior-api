@@ -39,8 +39,8 @@ router.patch(
 
 router.patch('/updateMe', userController.updateMe);
 router.patch('/updateMyPrivacy', userController.updateMyPrivacy);
-router.patch('/updateMyPassword', test);
-router.delete('/deleteMe', test);
+router.patch('/updateMyPassword', userController.updateMyPassword);
+router.delete('/deleteMe', userController.deleteMe);
 
 router.patch('/follow/:username', userController.follow);
 router.patch('/removeFollower/:username', userController.removeFollower);

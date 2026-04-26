@@ -124,6 +124,14 @@ class UserService {
     return toggled.private ? 'private' : 'public';
   }
 
+  async updatePassword(userId, data) {
+    return await userRepository.updatePassword(userId, data);
+  }
+
+  async deleteMe(userId) {
+    return await userRepository.delete(userId);
+  }
+
   #isSameUser(usernameX, usernameY) {
     if (usernameX === usernameY)
       throw new AppError('Could not perform this action.', 400);

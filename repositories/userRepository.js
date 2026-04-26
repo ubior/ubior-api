@@ -1,4 +1,5 @@
 const User = require('../models/userModel');
+const AppError = require('../utils/appError');
 
 class UserRepository {
   async create(userData) {
@@ -49,6 +50,23 @@ class UserRepository {
       new: true,
       runValidators: true,
     });
+  }
+
+  async updatePassword(userId, data) {
+    const user = await User.findById(userId).select('+password');
+    const { passwordCurrent, password, passwordConfirm } = data;
+
+    if (!(await user.correctPassword(passwordCurrent, user.password))) {
+      throw new AppError('Your current password is wrong.', 401);
+    }
+
+    user.password = password;
+    user.passwordConfirm = passwordConfirm;
+    return await user.save();
+  }
+
+  async delete(userId) {
+    return await User.findByIdAndDelete(userId);
   }
 
   async findById(userId) {
