@@ -1,22 +1,24 @@
 const express = require('express');
 const router = express.Router();
-
-const test = (req, res) => {
-  res.send('Hello World');
-};
+const auth = require('../middlewares/auth');
+const photo = require('../middlewares/photo');
+const itemController = require('../controllers/itemController');
 
 // Protect middleware
+router.use(auth.protect);
 
 router
   .route('/')
-  .get(test) // get all items
-  .post(test) // create a new item
-  .patch(test); // add items to wardrobe
+  .post(
+    photo.uploadPhoto,
+    itemController.createItem,
+    photo.resizePhoto('item', 500, undefined, 'ubior-item-photos'),
+    itemController.finalizeItem,
+  );
 
 router
-  .route('/:id')
-  .get(test) // get item by id
-  .patch(test) // update item by id
-  .delete(test); // delete item by id
+  .route('/:itemId')
+  .get(itemController.getItem)
+  .delete(itemController.deleteItem);
 
 module.exports = router;
