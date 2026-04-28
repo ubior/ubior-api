@@ -22,10 +22,7 @@ const itemSchema = new mongoose.Schema(
       type: String,
       default: 'Unknown',
     },
-    image: {
-      type: String,
-      required: [true, 'Please provide an image.'],
-    },
+    photoBlob: String,
     user: {
       type: mongoose.Schema.ObjectId,
       ref: 'User',
@@ -34,7 +31,7 @@ const itemSchema = new mongoose.Schema(
   {
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
 const Item = mongoose.model('Item', itemSchema);
