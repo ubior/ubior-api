@@ -1,21 +1,30 @@
 const express = require('express');
 const router = express.Router();
-
-const test = (req, res) => {
-  res.send('Hello World');
-};
+const auth = require('../middlewares/auth');
+const photo = require('../middlewares/photo');
+const outfitController = require('../controllers/outfitController');
 
 // Protect middleware
+router.use(auth.protect);
 
 router
   .route('/')
-  .get(test) // get all outfits
-  .post(test); // create a new outfit
+  .post(
+    photo.uploadPhoto,
+    outfitController.createOutfit,
+    photo.resizePhoto('outfit', 500, undefined, 'ubior-outfit-photos'),
+    outfitController.finalizeOutfit,
+  );
 
 router
-  .route('/:id')
-  .get(test) // get outfit by id
-  .patch(test) // update outfit by id
-  .delete(test); // delete outfit by id
+  .route('/:outfitId')
+  .get(outfitController.getOutfit)
+  .patch(
+    outfitController.getOutfitId,
+    photo.uploadPhoto,
+    photo.resizePhoto('outfit', 500, undefined, 'ubior-outfit-photos'),
+    outfitController.updateOutfit,
+  )
+  .delete(outfitController.deleteOutfit);
 
 module.exports = router;
