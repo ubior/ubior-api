@@ -1,24 +1,22 @@
 const express = require('express');
 const router = express.Router();
-
-const test = (req, res) => {
-  res.send('Hello World');
-};
-
-router.get('/', test); // get all posts
-router.get('/:id', test); // get post by id
+const auth = require('../middlewares/auth');
+const photo = require('../middlewares/photo');
+const postController = require('../controllers/postController');
 
 // Protect middleware
+router.use(auth.protect);
 
-router.post('/', test); // create a new post
-router.delete('/:id', test); // delete post by id
+router.post(
+  '/create',
+  photo.uploadPhoto,
+  postController.createPost,
+  photo.resizePhoto('post', 800, undefined, 'ubior-post-photos'),
+  postController.finalizePost,
+);
 
-router.patch('/:id/like', test); // like post by id
-router.patch('/:id/save', test); // save post by id
-router.patch('/:id/report', test); // report post by id
+router.get('/feed', postController.getFeed);
 
-// Admin middleware
-
-router.get('/:id/reports', test); // get all reports for a post
+router.delete('/:postId', postController.deletePost);
 
 module.exports = router;

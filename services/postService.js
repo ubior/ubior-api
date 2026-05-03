@@ -1,0 +1,101 @@
+const postRepository = require('../repositories/postRepository');
+const AppError = require('../utils/appError');
+const getSignedImageUrl = require('../utils/getSignedImageUrl');
+
+function shuffleInPlace(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+async function signFeedPost(postDoc) {
+  const post = postDoc.toObject({ virtuals: true });
+
+  if (post.user?.photoBlob && post.user.photoBlob !== 'default.png') {
+    const url = await getSignedImageUrl(
+      post.user.photoBlob,
+      300,
+      'ubior-user-photos',
+    );
+    post.user.photoBlob = undefined;
+    post.user.photo = url;
+  }
+
+  if (post.postType === 'photo') {
+    if (!post.photoBlob) return post;
+
+    post.photo = await getSignedImageUrl(
+      post.photoBlob,
+      300,
+      'ubior-post-photos',
+    );
+    return post;
+  }
+
+  if (post.postType === 'item') {
+    if (!post.item?.photoBlob) return post;
+
+    post.photo = await getSignedImageUrl(
+      post.item.photoBlob,
+      300,
+      'ubior-item-photos',
+    );
+    post.item.photoBlob = undefined;
+    return post;
+  }
+
+  if (post.postType === 'outfit') {
+    if (!post.outfit?.photoBlob) return post;
+
+    post.photo = await getSignedImageUrl(
+      post.outfit.photoBlob,
+      300,
+      'ubior-outfit-photos',
+    );
+    post.outfit.photoBlob = undefined;
+    return post;
+  }
+
+  return post;
+}
+
+class PostService {
+  async createPost(userId, data) {
+    return await postRepository.create(userId, data);
+  }
+
+  async updatePost(postId, userId, data) {
+    const post = await postRepository.update(postId, userId, data);
+    if (!post) {
+      throw new AppError('Post not found.', 404);
+    }
+    return post;
+  }
+
+  async getFeed(userId, cursor, limit) {
+    const docs = await postRepository.findFeedPage(userId, cursor, limit);
+
+    const signedPosts = await Promise.all(docs.map((d) => signFeedPost(d)));
+
+    shuffleInPlace(signedPosts);
+
+    const last = docs.at(-1);
+    const nextCursor =
+      docs.length === limit && last
+        ? {
+            createdAt: last.createdAt.toISOString(),
+            _id: last._id.toString(),
+          }
+        : null;
+
+    return { posts: signedPosts, nextCursor };
+  }
+
+  async deletePost(postId, userId) {
+    return await postRepository.delete(postId, userId);
+  }
+}
+
+module.exports = new PostService();
