@@ -1,3 +1,4 @@
+const User = require('../models/userModel');
 const postRepository = require('../repositories/postRepository');
 const AppError = require('../utils/appError');
 const getSignedImageUrl = require('../utils/getSignedImageUrl');
@@ -61,6 +62,19 @@ async function signFeedPost(postDoc) {
   return post;
 }
 
+async function canSeePost(userId, author) {
+  if (!author?._id) return false;
+
+  if (userId === author._id) return true;
+
+  if (!author.private) return true;
+
+  const user = await User.findById(userId).select('following');
+  if (!user) return false;
+
+  return user.following.some((id) => id === author._id);
+}
+
 class PostService {
   async createPost(userId, data) {
     return await postRepository.create(userId, data);
@@ -72,6 +86,20 @@ class PostService {
       throw new AppError('Post not found.', 404);
     }
     return post;
+  }
+
+  async getPost(postId, userId) {
+    const postDoc = await postRepository.findByIdDetailed(postId);
+    if (!postDoc) {
+      throw new AppError('Post not found.', 404);
+    }
+
+    const canSee = await canSeePost(userId, postDoc.user);
+    if (!canSee) {
+      throw new AppError('Post not found.', 404);
+    }
+
+    return await signFeedPost(postDoc);
   }
 
   async getFeed(userId, cursor, limit) {

@@ -13,6 +13,16 @@ class PostRepository {
     });
   }
 
+  async findByIdDetailed(postId) {
+    return await Post.findById(postId)
+      .populate({ path: 'user', select: 'name username photoBlob private' })
+      .populate({ path: 'item', select: 'name category photoBlob user' })
+      .populate({
+        path: 'outfit',
+        select: 'name category photoBlob user items',
+      });
+  }
+
   async findFeedPage(userId, cursor, limit) {
     const me = await User.findById(userId).select('following');
     if (!me) return [];

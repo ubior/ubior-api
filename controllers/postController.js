@@ -70,7 +70,7 @@ exports.getFeed = catchAsync(async (req, res) => {
 });
 
 exports.getPost = catchAsync(async (req, res) => {
-  const post = await postService.getPostById(req.params.postId);
+  const post = await postService.getPost(req.params.postId, req.user.id);
   res.status(200).json(responseFactory.createResponse({ post }));
 });
 
