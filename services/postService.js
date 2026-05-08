@@ -131,6 +131,43 @@ class PostService {
     return { posts: signedPosts, nextCursor };
   }
 
+  async getUserPosts(userId, username, cursor, limit) {
+    const author = await User.findOne({ username })
+      .select('_id private')
+      .lean();
+
+    if (!author) {
+      throw new AppError('User not found.', 404);
+    }
+
+    if (author.private) {
+      if (userId.toString() !== author._id.toString()) {
+        const user = await User.findById(userId).select('following');
+        const follows = user?.following?.some(
+          (id) => id.toString() === author._id.toString(),
+        );
+        if (!follows) {
+          throw new AppError('User not found.', 404);
+        }
+      }
+    }
+
+    const docs = await postRepository.findUserPosts(author._id, cursor, limit);
+
+    const posts = await Promise.all(docs.map((d) => signFeedPost(d, userId)));
+
+    const last = docs.at(-1);
+    const nextCursor =
+      docs.length === limit && last
+        ? {
+            createdAt: last.createdAt.toISOString(),
+            _id: last._id.toString(),
+          }
+        : null;
+
+    return { posts, nextCursor };
+  }
+
   async likePost(postId, userId) {
     const postDoc = await postRepository.findByIdDetailed(postId);
     if (!postDoc) {

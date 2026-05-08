@@ -16,6 +16,7 @@ router.post(
 );
 
 router.get('/feed', postController.getFeed);
+router.get('/user/:username', postController.getUserPosts);
 router.get('/:postId', postController.getPost);
 router.patch('/like/:postId', postController.likePost);
 

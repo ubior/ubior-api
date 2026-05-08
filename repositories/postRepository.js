@@ -67,6 +67,32 @@ class PostRepository {
       });
   }
 
+  async findUserPosts(authorId, cursor, limit) {
+    const filter = { user: authorId };
+
+    if (cursor?.createdAt && cursor?._id) {
+      const cursorCreatedAt = new Date(cursor.createdAt);
+
+      filter.$or = [
+        { createdAt: { $lt: cursorCreatedAt } },
+        {
+          createdAt: cursorCreatedAt,
+          _id: { $lt: cursor._id },
+        },
+      ];
+    }
+
+    return await Post.find(filter)
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(limit)
+      .populate({ path: 'user', select: 'name username photoBlob private' })
+      .populate({ path: 'item', select: 'name category photoBlob user' })
+      .populate({
+        path: 'outfit',
+        select: 'name category photoBlob user items',
+      });
+  }
+
   async addLike(postId, userId) {
     return await Post.findByIdAndUpdate(
       postId,

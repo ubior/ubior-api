@@ -69,6 +69,42 @@ exports.getFeed = catchAsync(async (req, res) => {
   );
 });
 
+exports.getUserPosts = catchAsync(async (req, res) => {
+  const limit = Number.parseInt(req.query.limit, 10);
+  const take = Number.isFinite(limit) && limit > 0 ? Math.min(limit, 50) : 10;
+
+  let cursor = null;
+  if (req.query.cursor) {
+    try {
+      const json = Buffer.from(req.query.cursor, 'base64url').toString('utf8');
+      cursor = JSON.parse(json);
+    } catch {
+      throw new AppError('Invalid cursor.', 400);
+    }
+  }
+
+  const { posts, nextCursor } = await postService.getUserPosts(
+    req.user.id,
+    req.params.username,
+    cursor,
+    take,
+  );
+
+  res.status(200).json(
+    responseFactory.createResponse({
+      posts,
+      pagination: {
+        limit: take,
+        nextCursor: nextCursor
+          ? Buffer.from(JSON.stringify(nextCursor), 'utf8').toString(
+              'base64url',
+            )
+          : null,
+      },
+    }),
+  );
+});
+
 exports.getPost = catchAsync(async (req, res) => {
   const post = await postService.getPost(req.params.postId, req.user.id);
   res.status(200).json(responseFactory.createResponse({ post }));
