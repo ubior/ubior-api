@@ -1,3 +1,4 @@
+const { default: mongoose } = require('mongoose');
 const Post = require('../models/postModel');
 const User = require('../models/userModel');
 
@@ -64,6 +65,26 @@ class PostRepository {
         path: 'outfit',
         select: 'name category photoBlob user items',
       });
+  }
+
+  async addLike(postId, userId) {
+    return await Post.findByIdAndUpdate(
+      postId,
+      {
+        $addToSet: { likes: new mongoose.Types.ObjectId(userId) },
+      },
+      { new: true, runValidators: true },
+    );
+  }
+
+  async removeLike(postId, userId) {
+    return await Post.findByIdAndUpdate(
+      postId,
+      {
+        $pull: { likes: new mongoose.Types.ObjectId(userId) },
+      },
+      { new: true, runValidators: true },
+    );
   }
 
   async delete(postId, userId) {

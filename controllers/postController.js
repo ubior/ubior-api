@@ -74,6 +74,11 @@ exports.getPost = catchAsync(async (req, res) => {
   res.status(200).json(responseFactory.createResponse({ post }));
 });
 
+exports.likePost = catchAsync(async (req, res) => {
+  const post = await postService.likePost(req.params.postId, req.user.id);
+  res.status(200).json(responseFactory.createResponse({ post }));
+});
+
 exports.deletePost = catchAsync(async (req, res) => {
   await postService.deletePost(req.params.postId, req.user.id);
   res.status(204).json(responseFactory.createResponse(null));

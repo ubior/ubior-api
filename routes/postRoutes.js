@@ -17,6 +17,7 @@ router.post(
 
 router.get('/feed', postController.getFeed);
 router.get('/:postId', postController.getPost);
+router.patch('/like/:postId', postController.likePost);
 
 router.delete('/:postId', postController.deletePost);
 

@@ -11,8 +11,16 @@ function shuffleInPlace(arr) {
   return arr;
 }
 
-async function signFeedPost(postDoc) {
+async function signFeedPost(postDoc, userId) {
   const post = postDoc.toObject({ virtuals: true });
+
+  const likeIds = Array.isArray(post.likes) ? post.likes : [];
+  post.likesCount = likeIds.length;
+  post.liked = userId
+    ? likeIds.some((id) => id.toString() === userId.toString())
+    : false;
+
+  post.likes = undefined;
 
   if (post.user?.photoBlob && post.user.photoBlob !== 'default.png') {
     const url = await getSignedImageUrl(
@@ -99,13 +107,15 @@ class PostService {
       throw new AppError('Post not found.', 404);
     }
 
-    return await signFeedPost(postDoc);
+    return await signFeedPost(postDoc, userId);
   }
 
   async getFeed(userId, cursor, limit) {
     const docs = await postRepository.findFeedPage(userId, cursor, limit);
 
-    const signedPosts = await Promise.all(docs.map((d) => signFeedPost(d)));
+    const signedPosts = await Promise.all(
+      docs.map((d) => signFeedPost(d, userId)),
+    );
 
     shuffleInPlace(signedPosts);
 
@@ -119,6 +129,29 @@ class PostService {
         : null;
 
     return { posts: signedPosts, nextCursor };
+  }
+
+  async likePost(postId, userId) {
+    const postDoc = await postRepository.findByIdDetailed(postId);
+    if (!postDoc) {
+      throw new AppError('Post not found.', 404);
+    }
+
+    const canSee = await canSeePost(userId, postDoc.user);
+    if (!canSee) {
+      throw new AppError('Post not found.', 404);
+    }
+
+    const alreadyLiked = (postDoc.likes || []).some(
+      (id) => id.toString() === userId.toString(),
+    );
+
+    const updatedDoc = alreadyLiked
+      ? await postRepository.removeLike(postId, userId)
+      : await postRepository.addLike(postId, userId);
+
+    const post = await postRepository.findByIdDetailed(updatedDoc._id);
+    return await signFeedPost(post, userId);
   }
 
   async deletePost(postId, userId) {
