@@ -1,21 +1,31 @@
 const mongoose = require('mongoose');
+const AppError = require('../utils/appError');
 
 const postSchema = new mongoose.Schema(
   {
     caption: {
       type: String,
     },
-    content: [
-      {
-        type: mongoose.Schema.ObjectId,
-        refPath: 'contentType',
-      },
-    ],
-    contentType: {
+    postType: {
       type: String,
-      enum: ['Item', 'Outfit'],
+      enum: ['item', 'outfit', 'photo'],
       required: true,
     },
+    item: {
+      type: mongoose.Schema.ObjectId,
+      ref: 'Item',
+      required: function () {
+        return this.postType === 'item';
+      },
+    },
+    outfit: {
+      type: mongoose.Schema.ObjectId,
+      ref: 'Outfit',
+      required: function () {
+        return this.postType === 'outfit';
+      },
+    },
+    photoBlob: String,
     user: {
       type: mongoose.Schema.ObjectId,
       ref: 'User',
@@ -34,13 +44,17 @@ const postSchema = new mongoose.Schema(
   {
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
-postSchema.virtual('reports', {
-  ref: 'Report',
-  foreignField: 'post',
-  localField: '_id',
+postSchema.pre('validate', function (next) {
+  if (this.postType === 'item' && (this.outfit || this.photoBlob)) {
+    throw new AppError('Item posts must only have an item.', 400);
+  }
+  if (this.postType === 'outfit' && (this.item || this.photoBlob)) {
+    throw new AppError('Outfit posts must only have an outfit.', 400);
+  }
+  next();
 });
 
 const Post = mongoose.model('Post', postSchema);
