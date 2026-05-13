@@ -22,7 +22,7 @@ async function signFeedPost(postDoc, userId) {
 
   post.likes = undefined;
 
-  if (post.user?.photoBlob && post.user.photoBlob !== 'default.png') {
+  if (post.user?.photoBlob) {
     const url = await getSignedImageUrl(
       post.user.photoBlob,
       300,

@@ -30,10 +30,7 @@ const userSchema = new mongoose.Schema(
     country: {
       type: String,
     },
-    photoBlob: {
-      type: String,
-      default: 'default.png',
-    },
+    photoBlob: String,
     bio: {
       type: String,
       maxlength: [100, 'Bio must be 100 characters at most.'],

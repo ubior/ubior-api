@@ -8,7 +8,7 @@ exports.getMe = catchAsync(async (req, res) => {
   const meDoc = await userService.getMe(req.userId);
   const me = meDoc.toObject();
 
-  if (me.photoBlob && me.photoBlob !== 'default.png') {
+  if (me.photoBlob) {
     const key = me.photoBlob;
     const signedUrl = await getSignedImageUrl(key, 300, 'ubior-user-photos');
     me.photoBlob = undefined;
