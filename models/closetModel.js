@@ -18,11 +18,12 @@ const closetSchema = new mongoose.Schema(
         ref: 'Item',
       },
     ],
+    photoBlob: String,
   },
   {
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
-  }
+  },
 );
 
 const Closet = mongoose.model('Closet', closetSchema);
