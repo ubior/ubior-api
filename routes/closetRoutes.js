@@ -1,21 +1,35 @@
 const express = require('express');
 const router = express.Router();
-
-const test = (req, res) => {
-  res.send('Hello World');
-};
+const auth = require('../middlewares/auth');
+const photo = require('../middlewares/photo');
+const closetController = require('../controllers/closetController');
 
 // Protect middleware
+router.use(auth.protect);
 
 router
   .route('/')
-  .get(test) // get all closets
-  .post(test); // create a new closet
+  .post(
+    photo.uploadPhoto,
+    closetController.createCloset,
+    photo.resizePhoto('closet', 500, undefined, 'ubior-closet-photos'),
+    closetController.finalizeCloset,
+  );
 
 router
-  .route('/:id')
-  .get(test) // get closet by id
-  .patch(test) // update closet by id
-  .delete(test); // delete closet by id
+  .route('/:closetId')
+  .get(closetController.getCloset)
+  .patch(
+    closetController.getClosetId,
+    photo.uploadPhoto,
+    photo.resizePhoto('closet', 500, undefined, 'ubior-closet-photos'),
+    closetController.updateCloset,
+  )
+  .delete(closetController.deleteCloset);
+
+router
+  .route('/:closetId/items')
+  .post(closetController.addItems)
+  .delete(closetController.removeItems);
 
 module.exports = router;
