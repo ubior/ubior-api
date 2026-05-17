@@ -3,6 +3,16 @@ const userRepository = require('../repositories/userRepository');
 const AppError = require('../utils/appError');
 
 class ItemService {
+  async getAllItems(cursor, limit = 20) {
+    const docs = await itemRepository.findPage(cursor, limit);
+
+    const last = docs.at(-1);
+    const nextCursor =
+      docs.length === limit && last ? { _id: last._id.toString() } : null;
+
+    return { items: docs, nextCursor };
+  }
+
   async createItem(userId, data) {
     const item = await itemRepository.create(userId, data);
 

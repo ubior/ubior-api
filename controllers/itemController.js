@@ -4,6 +4,66 @@ const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const getSignedImageUrl = require('../utils/getSignedImageUrl');
 
+exports.getAllItems = catchAsync(async (req, res) => {
+  const limit = Number.parseInt(req.query.limit, 10);
+  const take = Number.isFinite(limit) && limit > 0 ? Math.min(limit, 50) : 20;
+
+  let cursor = null;
+  if (req.query.cursor) {
+    try {
+      const json = Buffer.from(req.query.cursor, 'base64url').toString('utf8');
+      cursor = JSON.parse(json);
+    } catch {
+      throw new AppError('Invalid cursor.', 400);
+    }
+  }
+
+  const { items: itemsDocs, nextCursor } = await itemService.getAllItems(
+    cursor,
+    take,
+  );
+
+  const items = itemsDocs.map((doc) => doc.toObject());
+
+  if (items.length > 0) {
+    await Promise.all(
+      items.map(async (item) => {
+        if (item.photoBlob) {
+          item.photo = await getSignedImageUrl(
+            item.photoBlob,
+            300,
+            'ubior-item-photos',
+          );
+          item.photoBlob = undefined;
+        }
+
+        if (item.user?.photoBlob) {
+          item.user.photo = await getSignedImageUrl(
+            item.user.photoBlob,
+            300,
+            'ubior-user-photos',
+          );
+          item.user.photoBlob = undefined;
+        }
+      }),
+    );
+  }
+
+  res.status(200).json(
+    responseFactory.createResponse({
+      items,
+      pagination: {
+        limit: take,
+        nextCursor: nextCursor
+          ? Buffer.from(JSON.stringify(nextCursor), 'utf8').toString(
+              'base64url',
+            )
+          : null,
+      },
+    }),
+  );
+});
+
 exports.createItem = catchAsync(async (req, res, next) => {
   if (!req.file) {
     return next(new AppError('Please upload a photo for this item.', 400));
