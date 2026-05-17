@@ -1,5 +1,7 @@
 const closetRepository = require('../repositories/closetRepository');
+const userRepository = require('../repositories/userRepository');
 const AppError = require('../utils/appError');
+const itemService = require('./itemService');
 
 class ClosetService {
   async createCloset(userId, data) {
@@ -27,12 +29,17 @@ class ClosetService {
   }
 
   async addItems(closetId, items, userId) {
+    await itemService.assertOwnedItems(userId, items);
+
     const closet = await closetRepository.update(closetId, userId, {
       $addToSet: { items: { $each: items } },
     });
     if (!closet) {
       throw new AppError('Closet not found.', 404);
     }
+
+    await userRepository.addWardrobeItems(userId, items);
+
     return closet;
   }
 

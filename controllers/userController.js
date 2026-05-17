@@ -86,3 +86,75 @@ exports.handleRequest = (action = 'deny') => {
     res.status(200).json(responseFactory.createResponse({ status }));
   });
 };
+
+exports.getWardrobe = catchAsync(async (req, res) => {
+  const itemsDocs = await userService.getWardrobe(req.user.id);
+  const items = itemsDocs.map((doc) => doc.toObject());
+
+  if (Array.isArray(items) && items.length > 0) {
+    await Promise.all(
+      items.map(async (item) => {
+        if (!item?.photoBlob) return;
+
+        item.photo = await getSignedImageUrl(
+          item.photoBlob,
+          300,
+          'ubior-item-photos',
+        );
+        item.photoBlob = undefined;
+      }),
+    );
+  }
+
+  res.status(200).json(responseFactory.createResponse({ items }, true));
+});
+
+exports.addWardrobeItems = catchAsync(async (req, res) => {
+  const itemsDocs = await userService.addWardrobeItems(
+    req.user.id,
+    req.body.items,
+  );
+  const items = itemsDocs.map((doc) => doc.toObject());
+
+  if (Array.isArray(items) && items.length > 0) {
+    await Promise.all(
+      items.map(async (item) => {
+        if (!item?.photoBlob) return;
+
+        item.photo = await getSignedImageUrl(
+          item.photoBlob,
+          300,
+          'ubior-item-photos',
+        );
+        item.photoBlob = undefined;
+      }),
+    );
+  }
+
+  res.status(200).json(responseFactory.createResponse({ items }, true));
+});
+
+exports.removeWardrobeItems = catchAsync(async (req, res) => {
+  const itemsDocs = await userService.removeWardrobeItems(
+    req.user.id,
+    req.body.items,
+  );
+  const items = itemsDocs.map((doc) => doc.toObject());
+
+  if (Array.isArray(items) && items.length > 0) {
+    await Promise.all(
+      items.map(async (item) => {
+        if (!item?.photoBlob) return;
+
+        item.photo = await getSignedImageUrl(
+          item.photoBlob,
+          300,
+          'ubior-item-photos',
+        );
+        item.photoBlob = undefined;
+      }),
+    );
+  }
+
+  res.status(200).json(responseFactory.createResponse({ items }, true));
+});

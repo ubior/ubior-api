@@ -1,7 +1,19 @@
 const itemRepository = require('../repositories/itemRepository');
+const userRepository = require('../repositories/userRepository');
 const AppError = require('../utils/appError');
 
 class ItemService {
+  async assertOwnedItems(userId, items) {
+    if (!Array.isArray(items) || items.length === 0) {
+      throw new AppError('Please provide item ids.', 400);
+    }
+
+    const ownedCount = await itemRepository.countOwned(userId, items);
+    if (ownedCount !== items.length) {
+      throw new AppError('One or more items not found.', 404);
+    }
+  }
+
   async createItem(userId, data) {
     return await itemRepository.create(userId, data);
   }
@@ -23,7 +35,10 @@ class ItemService {
   }
 
   async deleteItem(itemId, userId) {
-    return await itemRepository.delete(itemId, userId);
+    const item = await itemRepository.delete(itemId, userId);
+    if (!item) return;
+
+    return await userRepository.removeWardrobeItems(userId, [itemId]);
   }
 }
 

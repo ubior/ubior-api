@@ -1,3 +1,4 @@
+const Closet = require('../models/closetModel');
 const User = require('../models/userModel');
 const AppError = require('../utils/appError');
 
@@ -107,6 +108,46 @@ class UserRepository {
 
   async removeRequest(userId, targetId) {
     return await this.update(userId, { $pull: { requests: targetId } });
+  }
+
+  async addWardrobeItems(userId, items) {
+    return await User.findByIdAndUpdate(
+      userId,
+      { $addToSet: { items: { $each: items } } },
+      {
+        new: true,
+        runValidators: true,
+      },
+    ).populate({
+      path: 'items',
+      select: 'name category color fabric brand photoBlob',
+    });
+  }
+
+  async removeWardrobeItems(userId, items) {
+    await Closet.updateMany(
+      { user: userId },
+      { $pull: { items: { $in: items } } },
+    );
+
+    return await User.findByIdAndUpdate(
+      userId,
+      { $pull: { items: { $in: items } } },
+      {
+        new: true,
+        runValidators: true,
+      },
+    ).populate({
+      path: 'items',
+      select: 'name category color fabric brand photoBlob',
+    });
+  }
+
+  async findWardrobe(userId) {
+    return await User.findById(userId).select('items').populate({
+      path: 'items',
+      select: 'name category color fabric brand photoBlob',
+    });
   }
 }
 

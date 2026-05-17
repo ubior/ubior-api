@@ -1,6 +1,10 @@
 const Item = require('../models/itemModel');
 
 class ItemRepository {
+  async countOwned(userId, items) {
+    return await Item.countDocuments({ _id: { $in: items }, user: userId });
+  }
+
   async create(userId, data) {
     return await Item.create({ user: userId, ...data });
   }
