@@ -21,10 +21,11 @@ class ClosetRepository {
       });
   }
 
-  async findAllByUser(userId) {
-    return await Closet.find({ user: userId })
-      .sort({ createdAt: -1 })
-      .select('-user');
+  async findAllByUser(userId, nameRegex = null) {
+    const filter = { user: userId };
+    if (nameRegex) filter.name = nameRegex;
+
+    return await Closet.find(filter).sort({ createdAt: -1 }).select('-user');
   }
 
   async findByIdAndUser(closetId, userId) {

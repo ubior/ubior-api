@@ -13,11 +13,17 @@ class OutfitRepository {
         new: true,
         runValidators: true,
       },
-    );
+    ).populate({
+      path: 'items',
+      select: 'name category color fabric brand photoBlob',
+    });
   }
 
-  async findAllByUser(userId) {
-    return await Outfit.find({ user: userId })
+  async findAllByUser(userId, nameRegex = null) {
+    const filter = { user: userId };
+    if (nameRegex) filter.name = nameRegex;
+
+    return await Outfit.find(filter)
       .sort({ createdAt: -1 })
       .select('name category photoBlob items');
   }

@@ -1,6 +1,7 @@
 const closetRepository = require('../repositories/closetRepository');
 const userRepository = require('../repositories/userRepository');
 const AppError = require('../utils/appError');
+const { buildSequentialRegex } = require('../utils/buildSequentialRegex');
 const itemService = require('./itemService');
 
 class ClosetService {
@@ -16,8 +17,9 @@ class ClosetService {
     return closet;
   }
 
-  async getMyClosets(userId) {
-    return await closetRepository.findAllByUser(userId);
+  async getMyClosets(userId, search) {
+    const nameRegex = buildSequentialRegex(search);
+    return await closetRepository.findAllByUser(userId, nameRegex);
   }
 
   async getCloset(closetId, userId) {

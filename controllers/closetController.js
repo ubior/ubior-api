@@ -23,6 +23,7 @@ exports.finalizeCloset = catchAsync(async (req, res) => {
     closet = await closetService.updateCloset(req.closetId, req.user.id, {
       photoBlob: req.file.r2key,
     });
+    closet = closet.toObject();
   }
 
   if (closet.photoBlob) {
@@ -70,7 +71,9 @@ exports.getCloset = catchAsync(async (req, res) => {
 });
 
 exports.getMyClosets = catchAsync(async (req, res) => {
-  const closetsDocs = await closetService.getMyClosets(req.user.id);
+  const search = req.body.search ?? null;
+
+  const closetsDocs = await closetService.getMyClosets(req.user.id, search);
   const closets = closetsDocs.map((doc) => doc.toObject());
 
   if (Array.isArray(closets) && closets.length > 0) {

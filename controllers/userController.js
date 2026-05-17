@@ -88,7 +88,9 @@ exports.handleRequest = (action = 'deny') => {
 };
 
 exports.getWardrobe = catchAsync(async (req, res) => {
-  const itemsDocs = await userService.getWardrobe(req.user.id);
+  const search = req.body.search ?? null;
+
+  const itemsDocs = await userService.getWardrobe(req.user.id, search);
   const items = itemsDocs.map((doc) => doc.toObject());
 
   if (Array.isArray(items) && items.length > 0) {

@@ -31,6 +31,14 @@ exports.finalizeItem = catchAsync(async (req, res) => {
     item = await itemService.updateItem(req.itemId, req.user.id, {
       photoBlob: req.file.r2key,
     });
+    item = item.toObject();
+  }
+
+  if (item.photoBlob) {
+    const key = item.photoBlob;
+    const signedUrl = await getSignedImageUrl(key, 300, 'ubior-item-photos');
+    item.photoBlob = undefined;
+    item.photo = signedUrl;
   }
 
   res.status(201).json(responseFactory.createResponse({ item }));

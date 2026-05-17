@@ -15,7 +15,11 @@ class ItemService {
   }
 
   async createItem(userId, data) {
-    return await itemRepository.create(userId, data);
+    const item = await itemRepository.create(userId, data);
+
+    await userRepository.addWardrobeItems(userId, [item._id]);
+
+    return item;
   }
 
   async updateItem(itemId, userId, data) {

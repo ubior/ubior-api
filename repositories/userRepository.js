@@ -1,4 +1,5 @@
 const Closet = require('../models/closetModel');
+const Item = require('../models/itemModel');
 const User = require('../models/userModel');
 const AppError = require('../utils/appError');
 
@@ -148,6 +149,26 @@ class UserRepository {
       path: 'items',
       select: 'name category color fabric brand photoBlob',
     });
+  }
+
+  async findWardrobeItems(userId, nameRegex = null) {
+    const user = await User.findById(userId).select('items');
+    if (!user?.items?.length) return [];
+
+    const filter = { _id: { $in: user.items } };
+
+    if (nameRegex) {
+      filter.$or = [
+        { name: nameRegex },
+        { category: nameRegex },
+        { color: nameRegex },
+        { brand: nameRegex },
+      ];
+    }
+
+    return await Item.find(filter)
+      .sort({ createdAt: -1 })
+      .select('name category color fabric brand photoBlob');
   }
 }
 
