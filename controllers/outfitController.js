@@ -34,6 +34,33 @@ exports.finalizeOutfit = catchAsync(async (req, res) => {
   res.status(201).json(responseFactory.createResponse({ outfit }));
 });
 
+exports.getMyOutfits = catchAsync(async (req, res) => {
+  const outfitsDocs = await outfitService.getMyOutfits(req.user.id);
+  const outfits = outfitsDocs.map((doc) => doc.toObject());
+
+  if (Array.isArray(outfits) && outfits.length > 0) {
+    await Promise.all(
+      outfits.map(async (outfit) => {
+        outfit.itemsCount = Array.isArray(outfit.items)
+          ? outfit.items.length
+          : 0;
+        outfit.items = undefined;
+
+        if (outfit.photoBlob) {
+          outfit.photo = await getSignedImageUrl(
+            outfit.photoBlob,
+            300,
+            'ubior-outfit-photos',
+          );
+          outfit.photoBlob = undefined;
+        }
+      }),
+    );
+  }
+
+  res.status(200).json(responseFactory.createResponse({ outfits }, true));
+});
+
 exports.getOutfit = catchAsync(async (req, res) => {
   const outfitDoc = await outfitService.getOutfit(
     req.params.outfitId,
@@ -45,6 +72,21 @@ exports.getOutfit = catchAsync(async (req, res) => {
   const signedUrl = await getSignedImageUrl(key, 300, 'ubior-outfit-photos');
   outfit.photoBlob = undefined;
   outfit.photo = signedUrl;
+
+  if (Array.isArray(outfit.items)) {
+    await Promise.all(
+      outfit.items.map(async (item) => {
+        if (!item?.photoBlob) return;
+
+        item.photo = await getSignedImageUrl(
+          item.photoBlob,
+          300,
+          'ubior-item-photos',
+        );
+        item.photoBlob = undefined;
+      }),
+    );
+  }
 
   res.status(200).json(responseFactory.createResponse({ outfit }));
 });

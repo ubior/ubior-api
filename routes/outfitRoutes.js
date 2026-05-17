@@ -9,6 +9,7 @@ router.use(auth.protect);
 
 router
   .route('/')
+  .get(outfitController.getMyOutfits)
   .post(
     photo.uploadPhoto,
     outfitController.createOutfit,

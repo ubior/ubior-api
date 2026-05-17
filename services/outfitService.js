@@ -6,6 +6,10 @@ class OutfitService {
     return await outfitRepository.create(userId, data);
   }
 
+  async getMyOutfits(userId) {
+    return await outfitRepository.findAllByUser(userId);
+  }
+
   async updateOutfit(outfitId, userId, data) {
     const outfit = await outfitRepository.update(outfitId, userId, data);
     if (!outfit) {
