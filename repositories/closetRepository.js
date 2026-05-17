@@ -21,6 +21,12 @@ class ClosetRepository {
       });
   }
 
+  async findAllByUser(userId) {
+    return await Closet.find({ user: userId })
+      .sort({ createdAt: -1 })
+      .select('-user');
+  }
+
   async findByIdAndUser(closetId, userId) {
     return await Closet.findOne({ _id: closetId, user: userId })
       .select('-user')

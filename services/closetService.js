@@ -16,6 +16,10 @@ class ClosetService {
     return closet;
   }
 
+  async getMyClosets(userId) {
+    return await closetRepository.findAllByUser(userId);
+  }
+
   async getCloset(closetId, userId) {
     const closet = await closetRepository.findByIdAndUser(closetId, userId);
     if (!closet) {
