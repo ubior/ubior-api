@@ -35,8 +35,6 @@ class ClosetService {
   }
 
   async addItems(closetId, items, userId) {
-    await itemService.assertOwnedItems(userId, items);
-
     const closet = await closetRepository.update(closetId, userId, {
       $addToSet: { items: { $each: items } },
     });

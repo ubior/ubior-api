@@ -232,13 +232,11 @@ class UserService {
   }
 
   async addWardrobeItems(userId, items) {
-    await itemService.assertOwnedItems(userId, items);
     const user = await userRepository.addWardrobeItems(userId, items);
     return user.items;
   }
 
   async removeWardrobeItems(userId, items) {
-    await itemService.assertOwnedItems(userId, items);
     const user = await userRepository.removeWardrobeItems(userId, items);
     return user.items;
   }
