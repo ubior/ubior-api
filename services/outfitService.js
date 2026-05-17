@@ -1,10 +1,17 @@
 const outfitRepository = require('../repositories/outfitRepository');
+const userRepository = require('../repositories/userRepository');
 const AppError = require('../utils/appError');
 const { buildSequentialRegex } = require('../utils/buildSequentialRegex');
 
 class OutfitService {
   async createOutfit(userId, data) {
-    return await outfitRepository.create(userId, data);
+    const outfit = await outfitRepository.create(userId, data);
+
+    if (Array.isArray(data.items) && data.items.length > 0) {
+      await userRepository.addWardrobeItems(userId, data.items);
+    }
+
+    return outfit;
   }
 
   async getMyOutfits(userId, search) {
