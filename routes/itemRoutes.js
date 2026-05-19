@@ -9,6 +9,7 @@ router.use(auth.protect);
 
 router
   .route('/')
+  .get(itemController.getAllItems)
   .post(
     photo.uploadPhoto,
     itemController.createItem,

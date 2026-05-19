@@ -51,4 +51,10 @@ router.patch(
 );
 router.patch('/denyRequest/:username', userController.handleRequest('deny'));
 
+router.get('/wardrobe', userController.getWardrobe);
+router
+  .route('/wardrobe/items')
+  .post(userController.addWardrobeItems)
+  .delete(userController.removeWardrobeItems);
+
 module.exports = router;

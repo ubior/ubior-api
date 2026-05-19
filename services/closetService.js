@@ -1,5 +1,8 @@
 const closetRepository = require('../repositories/closetRepository');
+const userRepository = require('../repositories/userRepository');
 const AppError = require('../utils/appError');
+const { buildSequentialRegex } = require('../utils/buildSequentialRegex');
+const itemService = require('./itemService');
 
 class ClosetService {
   async createCloset(userId, data) {
@@ -12,6 +15,11 @@ class ClosetService {
       throw new AppError('Closet not found.', 404);
     }
     return closet;
+  }
+
+  async getMyClosets(userId, search) {
+    const nameRegex = buildSequentialRegex(search);
+    return await closetRepository.findAllByUser(userId, nameRegex);
   }
 
   async getCloset(closetId, userId) {
@@ -33,6 +41,9 @@ class ClosetService {
     if (!closet) {
       throw new AppError('Closet not found.', 404);
     }
+
+    await userRepository.addWardrobeItems(userId, items);
+
     return closet;
   }
 

@@ -1,5 +1,7 @@
 const userRepository = require('../repositories/userRepository');
 const AppError = require('../utils/appError');
+const { buildSequentialRegex } = require('../utils/buildSequentialRegex');
+const itemService = require('./itemService');
 
 class UserService {
   async createUser(userData) {
@@ -213,6 +215,30 @@ class UserService {
       throw new AppError('Could not perform this action.', 400);
     }
     throw new AppError('User not found in requests.', 404);
+  }
+
+  async getWardrobe(userId, search) {
+    const nameRegex = buildSequentialRegex(search);
+
+    if (!nameRegex) {
+      const user = await userRepository.findWardrobe(userId);
+      if (!user) {
+        throw new AppError('User not found.', 404);
+      }
+      return user.items;
+    }
+
+    return await userRepository.findWardrobeItems(userId, nameRegex);
+  }
+
+  async addWardrobeItems(userId, items) {
+    const user = await userRepository.addWardrobeItems(userId, items);
+    return user.items;
+  }
+
+  async removeWardrobeItems(userId, items) {
+    const user = await userRepository.removeWardrobeItems(userId, items);
+    return user.items;
   }
 }
 

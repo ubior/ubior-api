@@ -23,6 +23,7 @@ exports.finalizeCloset = catchAsync(async (req, res) => {
     closet = await closetService.updateCloset(req.closetId, req.user.id, {
       photoBlob: req.file.r2key,
     });
+    closet = closet.toObject();
   }
 
   if (closet.photoBlob) {
@@ -67,6 +68,35 @@ exports.getCloset = catchAsync(async (req, res) => {
   }
 
   res.status(200).json(responseFactory.createResponse({ closet }));
+});
+
+exports.getMyClosets = catchAsync(async (req, res) => {
+  const search = req.body.search ?? null;
+
+  const closetsDocs = await closetService.getMyClosets(req.user.id, search);
+  const closets = closetsDocs.map((doc) => doc.toObject());
+
+  if (Array.isArray(closets) && closets.length > 0) {
+    await Promise.all(
+      closets.map(async (closet) => {
+        closet.itemsCount = Array.isArray(closet.items)
+          ? closet.items.length
+          : 0;
+        closet.items = undefined;
+
+        if (closet.photoBlob) {
+          closet.photo = await getSignedImageUrl(
+            closet.photoBlob,
+            300,
+            'ubior-closet-photos',
+          );
+          closet.photoBlob = undefined;
+        }
+      }),
+    );
+  }
+
+  res.status(200).json(responseFactory.createResponse({ closets }, true));
 });
 
 exports.getClosetId = (req, res, next) => {

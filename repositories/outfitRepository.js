@@ -13,11 +13,28 @@ class OutfitRepository {
         new: true,
         runValidators: true,
       },
-    );
+    ).populate({
+      path: 'items',
+      select: 'name category color fabric brand photoBlob',
+    });
+  }
+
+  async findAllByUser(userId, nameRegex = null) {
+    const filter = { user: userId };
+    if (nameRegex) filter.name = nameRegex;
+
+    return await Outfit.find(filter)
+      .sort({ createdAt: -1 })
+      .select('name category photoBlob items');
   }
 
   async findByIdAndUser(outfitId, userId) {
-    return await Outfit.findOne({ _id: outfitId, user: userId });
+    return await Outfit.findOne({ _id: outfitId, user: userId })
+      .select('name category photoBlob items')
+      .populate({
+        path: 'items',
+        select: 'name category color fabric brand photoBlob',
+      });
   }
 
   async delete(outfitId, userId) {

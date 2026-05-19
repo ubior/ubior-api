@@ -9,6 +9,7 @@ router.use(auth.protect);
 
 router
   .route('/')
+  .get(closetController.getMyClosets)
   .post(
     photo.uploadPhoto,
     closetController.createCloset,

@@ -29,9 +29,63 @@ exports.finalizeOutfit = catchAsync(async (req, res) => {
     outfit = await outfitService.updateOutfit(req.outfitId, req.user.id, {
       photoBlob: req.file.r2key,
     });
+    outfit = outfit.toObject();
+  }
+
+  if (outfit.photoBlob) {
+    const key = outfit.photoBlob;
+    const signedUrl = await getSignedImageUrl(key, 300, 'ubior-outfit-photos');
+    outfit.photoBlob = undefined;
+    outfit.photo = signedUrl;
+  }
+
+  outfit.user = undefined;
+
+  if (Array.isArray(outfit.items)) {
+    await Promise.all(
+      outfit.items.map(async (item) => {
+        if (!item?.photoBlob) return;
+
+        item.photo = await getSignedImageUrl(
+          item.photoBlob,
+          300,
+          'ubior-item-photos',
+        );
+        item.photoBlob = undefined;
+      }),
+    );
   }
 
   res.status(201).json(responseFactory.createResponse({ outfit }));
+});
+
+exports.getMyOutfits = catchAsync(async (req, res) => {
+  const search = req.body.search ?? null;
+
+  const outfitsDocs = await outfitService.getMyOutfits(req.user.id, search);
+  const outfits = outfitsDocs.map((doc) => doc.toObject());
+
+  if (Array.isArray(outfits) && outfits.length > 0) {
+    await Promise.all(
+      outfits.map(async (outfit) => {
+        outfit.itemsCount = Array.isArray(outfit.items)
+          ? outfit.items.length
+          : 0;
+        outfit.items = undefined;
+
+        if (outfit.photoBlob) {
+          outfit.photo = await getSignedImageUrl(
+            outfit.photoBlob,
+            300,
+            'ubior-outfit-photos',
+          );
+          outfit.photoBlob = undefined;
+        }
+      }),
+    );
+  }
+
+  res.status(200).json(responseFactory.createResponse({ outfits }, true));
 });
 
 exports.getOutfit = catchAsync(async (req, res) => {
@@ -45,6 +99,21 @@ exports.getOutfit = catchAsync(async (req, res) => {
   const signedUrl = await getSignedImageUrl(key, 300, 'ubior-outfit-photos');
   outfit.photoBlob = undefined;
   outfit.photo = signedUrl;
+
+  if (Array.isArray(outfit.items)) {
+    await Promise.all(
+      outfit.items.map(async (item) => {
+        if (!item?.photoBlob) return;
+
+        item.photo = await getSignedImageUrl(
+          item.photoBlob,
+          300,
+          'ubior-item-photos',
+        );
+        item.photoBlob = undefined;
+      }),
+    );
+  }
 
   res.status(200).json(responseFactory.createResponse({ outfit }));
 });

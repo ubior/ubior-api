@@ -1,6 +1,19 @@
 const Item = require('../models/itemModel');
 
 class ItemRepository {
+  async findPage(cursor, limit) {
+    const filter = {};
+
+    if (cursor?._id) {
+      filter._id = { $lt: cursor._id };
+    }
+
+    return await Item.find(filter)
+      .sort({ _id: -1 })
+      .limit(limit)
+      .populate({ path: 'user', select: 'name username photoBlob' });
+  }
+
   async create(userId, data) {
     return await Item.create({ user: userId, ...data });
   }

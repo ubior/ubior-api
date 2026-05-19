@@ -1,9 +1,24 @@
 const itemRepository = require('../repositories/itemRepository');
+const userRepository = require('../repositories/userRepository');
 const AppError = require('../utils/appError');
 
 class ItemService {
+  async getAllItems(cursor, limit = 20) {
+    const docs = await itemRepository.findPage(cursor, limit);
+
+    const last = docs.at(-1);
+    const nextCursor =
+      docs.length === limit && last ? { _id: last._id.toString() } : null;
+
+    return { items: docs, nextCursor };
+  }
+
   async createItem(userId, data) {
-    return await itemRepository.create(userId, data);
+    const item = await itemRepository.create(userId, data);
+
+    await userRepository.addWardrobeItems(userId, [item._id]);
+
+    return item;
   }
 
   async updateItem(itemId, userId, data) {
@@ -23,7 +38,10 @@ class ItemService {
   }
 
   async deleteItem(itemId, userId) {
-    return await itemRepository.delete(itemId, userId);
+    const item = await itemRepository.delete(itemId, userId);
+    if (!item) return;
+
+    return await userRepository.removeWardrobeItems(userId, [itemId]);
   }
 }
 
