@@ -4,14 +4,19 @@ const AppError = require('../utils/appError');
 const { buildSequentialRegex } = require('../utils/buildSequentialRegex');
 
 class OutfitService {
-  async createOutfit(userId, data) {
-    const outfit = await outfitRepository.create(userId, data);
-
-    if (Array.isArray(data.items) && data.items.length > 0) {
-      await userRepository.addWardrobeItems(userId, data.items);
+  async _ownItems(userId, items) {
+    const user = await userRepository.findWardrobe(userId);
+    const invalid = items.filter((id) => !user.items.includes(id));
+    if (invalid.length > 0) {
+      throw new AppError('All outfit items must be in your wardrobe.', 400);
     }
+  }
 
-    return outfit;
+  async createOutfit(userId, data) {
+    if (Array.isArray(data.items) && data.items.length > 0) {
+      await this._ownItems(userId, data.items);
+    }
+    return await outfitRepository.create(userId, data);
   }
 
   async getMyOutfits(userId, search) {
@@ -20,6 +25,9 @@ class OutfitService {
   }
 
   async updateOutfit(outfitId, userId, data) {
+    if (Array.isArray(data.items) && data.items.length > 0) {
+      await this._ownItems(userId, data.items);
+    }
     const outfit = await outfitRepository.update(outfitId, userId, data);
     if (!outfit) {
       throw new AppError('Outfit not found.', 404);
