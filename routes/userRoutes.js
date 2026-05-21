@@ -29,6 +29,7 @@ router.use(auth.protect);
 router.get('/authStatus', authController.getAuthStatus);
 
 router.get('/me', userController.getMe);
+router.get('/me/stats', userController.getMyStats);
 
 router.patch(
   '/updateMyPhoto',

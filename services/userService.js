@@ -1,7 +1,6 @@
 const userRepository = require('../repositories/userRepository');
 const AppError = require('../utils/appError');
 const { buildSequentialRegex } = require('../utils/buildSequentialRegex');
-const itemService = require('./itemService');
 
 class UserService {
   async createUser(userData) {
@@ -91,6 +90,10 @@ class UserService {
       throw new AppError('User not found.', 404);
     }
     return user;
+  }
+
+  async getMyStats(userId) {
+    return await userRepository.findStats(userId);
   }
 
   async updatePrivacy(userId) {

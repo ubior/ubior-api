@@ -18,6 +18,11 @@ exports.getMe = catchAsync(async (req, res) => {
   res.status(200).json(responseFactory.createResponse({ me }));
 });
 
+exports.getMyStats = catchAsync(async (req, res) => {
+  const stats = await userService.getMyStats(req.user.id);
+  res.status(200).json(responseFactory.createResponse({ stats }));
+});
+
 exports.updateMyPhoto = catchAsync(async (req, res) => {
   await userService.updateUser(req.user.id, { photoBlob: req.file.r2key });
 
