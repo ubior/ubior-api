@@ -4,6 +4,7 @@ const photo = require('../middlewares/photo');
 const auth = require('../middlewares/auth');
 const authController = require('../controllers/authController');
 const userController = require('../controllers/userController');
+const postController = require('../controllers/postController');
 
 const test = (req, res) => {
   res.send('Hello World');
@@ -30,6 +31,10 @@ router.get('/authStatus', authController.getAuthStatus);
 
 router.get('/me', userController.getMe);
 router.get('/me/stats', userController.getMyStats);
+router.get('/me/followers', userController.getMyFollowers);
+router.get('/me/following', userController.getMyFollowing);
+router.get('/me/requests', userController.getMyRequests);
+router.get('/me/posts', userController.getMyPosts, postController.getUserPosts);
 
 router.patch(
   '/updateMyPhoto',

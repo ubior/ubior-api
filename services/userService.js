@@ -96,6 +96,18 @@ class UserService {
     return await userRepository.findStats(userId);
   }
 
+  async getMyFollowers(userId) {
+    return await userRepository.findFollowers(userId);
+  }
+
+  async getMyFollowing(userId) {
+    return await userRepository.findFollowing(userId);
+  }
+
+  async getMyRequests(userId) {
+    return await userRepository.findRequests(userId);
+  }
+
   async updatePrivacy(userId) {
     const user = await userRepository.findById(userId);
     if (!user) {

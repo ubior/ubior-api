@@ -4,6 +4,22 @@ const userService = require('../services/userService');
 const getSignedImageUrl = require('../utils/getSignedImageUrl');
 const { createSendTokens } = require('../middlewares/createToken');
 
+const signUserPhotos = async (users) => {
+  if (!Array.isArray(users) || users.length === 0) return;
+  await Promise.all(
+    users.map(async (user) => {
+      if (user.photoBlob) {
+        user.photo = await getSignedImageUrl(
+          user.photoBlob,
+          300,
+          'ubior-user-photos',
+        );
+        user.photoBlob = undefined;
+      }
+    }),
+  );
+};
+
 exports.getMe = catchAsync(async (req, res) => {
   const meDoc = await userService.getMe(req.userId);
   const me = meDoc.toObject();
@@ -21,6 +37,32 @@ exports.getMe = catchAsync(async (req, res) => {
 exports.getMyStats = catchAsync(async (req, res) => {
   const stats = await userService.getMyStats(req.user.id);
   res.status(200).json(responseFactory.createResponse({ stats }));
+});
+
+exports.getMyFollowers = catchAsync(async (req, res) => {
+  const followersDocs = await userService.getMyFollowers(req.user.id);
+  const followers = followersDocs.map((doc) => doc.toObject());
+  await signUserPhotos(followers);
+  res.status(200).json(responseFactory.createResponse({ followers }, true));
+});
+
+exports.getMyFollowing = catchAsync(async (req, res) => {
+  const followingDocs = await userService.getMyFollowing(req.user.id);
+  const following = followingDocs.map((doc) => doc.toObject());
+  await signUserPhotos(following);
+  res.status(200).json(responseFactory.createResponse({ following }, true));
+});
+
+exports.getMyRequests = catchAsync(async (req, res) => {
+  const requestsDocs = await userService.getMyRequests(req.user.id);
+  const requests = requestsDocs.map((doc) => doc.toObject());
+  await signUserPhotos(requests);
+  res.status(200).json(responseFactory.createResponse({ requests }, true));
+});
+
+exports.getMyPosts = catchAsync(async (req, res, next) => {
+  req.params.username = req.user.username;
+  next();
 });
 
 exports.updateMyPhoto = catchAsync(async (req, res) => {

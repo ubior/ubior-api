@@ -116,6 +116,30 @@ class UserRepository {
     return stats;
   }
 
+  async findFollowers(userId) {
+    const user = await User.findById(userId)
+      .select('followers')
+      .populate({ path: 'followers', select: 'name username photoBlob' });
+    if (!user) throw new AppError('User not found.', 404);
+    return user.followers;
+  }
+
+  async findFollowing(userId) {
+    const user = await User.findById(userId)
+      .select('following')
+      .populate({ path: 'following', select: 'name username photoBlob' });
+    if (!user) throw new AppError('User not found.', 404);
+    return user.following;
+  }
+
+  async findRequests(userId) {
+    const user = await User.findById(userId)
+      .select('requests')
+      .populate({ path: 'requests', select: 'name username photoBlob' });
+    if (!user) throw new AppError('User not found.', 404);
+    return user.requests;
+  }
+
   async addFollower(userId, targetId) {
     return await this.update(userId, {
       $addToSet: { followers: targetId },
