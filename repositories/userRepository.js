@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Closet = require('../models/closetModel');
 const Item = require('../models/itemModel');
 const User = require('../models/userModel');
@@ -81,6 +82,62 @@ class UserRepository {
 
   async findMe(userId) {
     return await User.findById(userId).select('name username photoBlob bio');
+  }
+
+  async findStats(userId) {
+    const [stats] = await User.aggregate([
+      { $match: { _id: new mongoose.Types.ObjectId(userId) } },
+      {
+        $lookup: {
+          from: 'posts',
+          localField: '_id',
+          foreignField: 'user',
+          as: 'posts',
+        },
+      },
+      {
+        $addFields: {
+          followersCount: { $size: { $ifNull: ['$followers', []] } },
+          followingCount: { $size: { $ifNull: ['$following', []] } },
+          postsCount: { $size: { $ifNull: ['$posts', []] } },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          followersCount: 1,
+          followingCount: 1,
+          postsCount: 1,
+        },
+      },
+    ]);
+
+    if (!stats) throw new AppError('User not found.', 404);
+    return stats;
+  }
+
+  async findFollowers(userId) {
+    const user = await User.findById(userId)
+      .select('followers')
+      .populate({ path: 'followers', select: 'name username photoBlob' });
+    if (!user) throw new AppError('User not found.', 404);
+    return user.followers;
+  }
+
+  async findFollowing(userId) {
+    const user = await User.findById(userId)
+      .select('following')
+      .populate({ path: 'following', select: 'name username photoBlob' });
+    if (!user) throw new AppError('User not found.', 404);
+    return user.following;
+  }
+
+  async findRequests(userId) {
+    const user = await User.findById(userId)
+      .select('requests')
+      .populate({ path: 'requests', select: 'name username photoBlob' });
+    if (!user) throw new AppError('User not found.', 404);
+    return user.requests;
   }
 
   async addFollower(userId, targetId) {
