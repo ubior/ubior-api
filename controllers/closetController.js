@@ -46,7 +46,7 @@ exports.getCloset = catchAsync(async (req, res) => {
 });
 
 exports.getMyClosets = catchAsync(async (req, res) => {
-  const search = req.body.search ?? null;
+  const search = req.query.search ?? null;
 
   const closetsDocs = await closetService.getMyClosets(req.user.id, search);
   const closets = closetsDocs.map((doc) => doc.toObject());

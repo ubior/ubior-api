@@ -112,7 +112,7 @@ exports.handleRequest = (action = 'deny') => {
 };
 
 exports.getWardrobe = catchAsync(async (req, res) => {
-  const search = req.body.search ?? null;
+  const search = req.query.search ?? null;
 
   const itemsDocs = await userService.getWardrobe(req.user.id, search);
   const items = itemsDocs.map((doc) => doc.toObject());
