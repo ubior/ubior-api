@@ -1,36 +1,13 @@
 const responseFactory = require('../factories/responseFactory');
 const catchAsync = require('../utils/catchAsync');
 const userService = require('../services/userService');
-const getSignedImageUrl = require('../utils/getSignedImageUrl');
+const { signUser, signUsers, signItems } = require('../utils/signPhotos');
 const { createSendTokens } = require('../middlewares/createToken');
-
-const signUserPhotos = async (users) => {
-  if (!Array.isArray(users) || users.length === 0) return;
-  await Promise.all(
-    users.map(async (user) => {
-      if (user.photoBlob) {
-        user.photo = await getSignedImageUrl(
-          user.photoBlob,
-          300,
-          'ubior-user-photos',
-        );
-        user.photoBlob = undefined;
-      }
-    }),
-  );
-};
 
 exports.getMe = catchAsync(async (req, res) => {
   const meDoc = await userService.getMe(req.userId);
   const me = meDoc.toObject();
-
-  if (me.photoBlob) {
-    const key = me.photoBlob;
-    const signedUrl = await getSignedImageUrl(key, 300, 'ubior-user-photos');
-    me.photoBlob = undefined;
-    me.photo = signedUrl;
-  }
-
+  await signUser(me);
   res.status(200).json(responseFactory.createResponse({ me }));
 });
 
@@ -42,21 +19,21 @@ exports.getMyStats = catchAsync(async (req, res) => {
 exports.getMyFollowers = catchAsync(async (req, res) => {
   const followersDocs = await userService.getMyFollowers(req.user.id);
   const followers = followersDocs.map((doc) => doc.toObject());
-  await signUserPhotos(followers);
+  await signUsers(followers);
   res.status(200).json(responseFactory.createResponse({ followers }, true));
 });
 
 exports.getMyFollowing = catchAsync(async (req, res) => {
   const followingDocs = await userService.getMyFollowing(req.user.id);
   const following = followingDocs.map((doc) => doc.toObject());
-  await signUserPhotos(following);
+  await signUsers(following);
   res.status(200).json(responseFactory.createResponse({ following }, true));
 });
 
 exports.getMyRequests = catchAsync(async (req, res) => {
   const requestsDocs = await userService.getMyRequests(req.user.id);
   const requests = requestsDocs.map((doc) => doc.toObject());
-  await signUserPhotos(requests);
+  await signUsers(requests);
   res.status(200).json(responseFactory.createResponse({ requests }, true));
 });
 
@@ -140,20 +117,7 @@ exports.getWardrobe = catchAsync(async (req, res) => {
   const itemsDocs = await userService.getWardrobe(req.user.id, search);
   const items = itemsDocs.map((doc) => doc.toObject());
 
-  if (Array.isArray(items) && items.length > 0) {
-    await Promise.all(
-      items.map(async (item) => {
-        if (!item?.photoBlob) return;
-
-        item.photo = await getSignedImageUrl(
-          item.photoBlob,
-          300,
-          'ubior-item-photos',
-        );
-        item.photoBlob = undefined;
-      }),
-    );
-  }
+  await signItems(items);
 
   res.status(200).json(responseFactory.createResponse({ items }, true));
 });
@@ -165,20 +129,7 @@ exports.addWardrobeItems = catchAsync(async (req, res) => {
   );
   const items = itemsDocs.map((doc) => doc.toObject());
 
-  if (Array.isArray(items) && items.length > 0) {
-    await Promise.all(
-      items.map(async (item) => {
-        if (!item?.photoBlob) return;
-
-        item.photo = await getSignedImageUrl(
-          item.photoBlob,
-          300,
-          'ubior-item-photos',
-        );
-        item.photoBlob = undefined;
-      }),
-    );
-  }
+  await signItems(items);
 
   res.status(200).json(responseFactory.createResponse({ items }, true));
 });
@@ -190,20 +141,7 @@ exports.removeWardrobeItems = catchAsync(async (req, res) => {
   );
   const items = itemsDocs.map((doc) => doc.toObject());
 
-  if (Array.isArray(items) && items.length > 0) {
-    await Promise.all(
-      items.map(async (item) => {
-        if (!item?.photoBlob) return;
-
-        item.photo = await getSignedImageUrl(
-          item.photoBlob,
-          300,
-          'ubior-item-photos',
-        );
-        item.photoBlob = undefined;
-      }),
-    );
-  }
+  await signItems(items);
 
   res.status(200).json(responseFactory.createResponse({ items }, true));
 });

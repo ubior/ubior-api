@@ -1,7 +1,7 @@
 const User = require('../models/userModel');
 const postRepository = require('../repositories/postRepository');
 const AppError = require('../utils/appError');
-const getSignedImageUrl = require('../utils/getSignedImageUrl');
+const { signPost } = require('../utils/signPhotos');
 
 function shuffleInPlace(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -9,65 +9,6 @@ function shuffleInPlace(arr) {
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
-}
-
-async function signFeedPost(postDoc, userId) {
-  const post = postDoc.toObject({ virtuals: true });
-
-  const likeIds = Array.isArray(post.likes) ? post.likes : [];
-  post.likesCount = likeIds.length;
-  post.liked = userId
-    ? likeIds.some((id) => id.toString() === userId.toString())
-    : false;
-
-  post.likes = undefined;
-
-  if (post.user?.photoBlob) {
-    const url = await getSignedImageUrl(
-      post.user.photoBlob,
-      300,
-      'ubior-user-photos',
-    );
-    post.user.photoBlob = undefined;
-    post.user.photo = url;
-  }
-
-  if (post.postType === 'photo') {
-    if (!post.photoBlob) return post;
-
-    post.photo = await getSignedImageUrl(
-      post.photoBlob,
-      300,
-      'ubior-post-photos',
-    );
-    return post;
-  }
-
-  if (post.postType === 'item') {
-    if (!post.item?.photoBlob) return post;
-
-    post.photo = await getSignedImageUrl(
-      post.item.photoBlob,
-      300,
-      'ubior-item-photos',
-    );
-    post.item.photoBlob = undefined;
-    return post;
-  }
-
-  if (post.postType === 'outfit') {
-    if (!post.outfit?.photoBlob) return post;
-
-    post.photo = await getSignedImageUrl(
-      post.outfit.photoBlob,
-      300,
-      'ubior-outfit-photos',
-    );
-    post.outfit.photoBlob = undefined;
-    return post;
-  }
-
-  return post;
 }
 
 async function canSeePost(userId, author) {
@@ -107,15 +48,14 @@ class PostService {
       throw new AppError('Post not found.', 404);
     }
 
-    return await signFeedPost(postDoc, userId);
+    return await signPost(postDoc, userId);
   }
 
   async getFeed(userId, cursor, limit) {
     const docs = await postRepository.findFeedPage(userId, cursor, limit);
 
-    const signedPosts = await Promise.all(
-      docs.map((d) => signFeedPost(d, userId)),
-    );
+    if (!Array.isArray(docs) || docs.length === 0) return;
+    const signedPosts = await Promise.all(docs.map((d) => signPost(d, userId)));
 
     shuffleInPlace(signedPosts);
 
@@ -154,7 +94,7 @@ class PostService {
 
     const docs = await postRepository.findUserPosts(author._id, cursor, limit);
 
-    const posts = await Promise.all(docs.map((d) => signFeedPost(d, userId)));
+    const posts = await Promise.all(docs.map((d) => signPost(d, userId)));
 
     const last = docs.at(-1);
     const nextCursor =
@@ -188,7 +128,7 @@ class PostService {
       : await postRepository.addLike(postId, userId);
 
     const post = await postRepository.findByIdDetailed(updatedDoc._id);
-    return await signFeedPost(post, userId);
+    return await signPost(post, userId);
   }
 
   async deletePost(postId, userId) {
