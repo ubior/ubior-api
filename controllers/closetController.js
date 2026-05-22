@@ -1,7 +1,7 @@
 const closetService = require('../services/closetService');
 const responseFactory = require('../factories/responseFactory');
 const catchAsync = require('../utils/catchAsync');
-const getSignedImageUrl = require('../utils/getSignedImageUrl');
+const { signCloset, signClosets } = require('../utils/signPhotos');
 
 exports.createCloset = catchAsync(async (req, res, next) => {
   const data = {
@@ -26,12 +26,7 @@ exports.finalizeCloset = catchAsync(async (req, res) => {
     closet = closet.toObject();
   }
 
-  if (closet.photoBlob) {
-    const key = closet.photoBlob;
-    const signedUrl = await getSignedImageUrl(key, 300, 'ubior-closet-photos');
-    closet.photoBlob = undefined;
-    closet.photo = signedUrl;
-  }
+  await signCloset(closet);
 
   closet.user = undefined;
 
@@ -45,27 +40,7 @@ exports.getCloset = catchAsync(async (req, res) => {
   );
   const closet = closetDoc.toObject();
 
-  if (closet.photoBlob) {
-    const key = closet.photoBlob;
-    const signedUrl = await getSignedImageUrl(key, 300, 'ubior-closet-photos');
-    closet.photoBlob = undefined;
-    closet.photo = signedUrl;
-  }
-
-  if (Array.isArray(closet.items)) {
-    await Promise.all(
-      closet.items.map(async (item) => {
-        if (!item?.photoBlob) return;
-
-        item.photo = await getSignedImageUrl(
-          item.photoBlob,
-          300,
-          'ubior-item-photos',
-        );
-        item.photoBlob = undefined;
-      }),
-    );
-  }
+  await signCloset(closet);
 
   res.status(200).json(responseFactory.createResponse({ closet }));
 });
@@ -76,25 +51,7 @@ exports.getMyClosets = catchAsync(async (req, res) => {
   const closetsDocs = await closetService.getMyClosets(req.user.id, search);
   const closets = closetsDocs.map((doc) => doc.toObject());
 
-  if (Array.isArray(closets) && closets.length > 0) {
-    await Promise.all(
-      closets.map(async (closet) => {
-        closet.itemsCount = Array.isArray(closet.items)
-          ? closet.items.length
-          : 0;
-        closet.items = undefined;
-
-        if (closet.photoBlob) {
-          closet.photo = await getSignedImageUrl(
-            closet.photoBlob,
-            300,
-            'ubior-closet-photos',
-          );
-          closet.photoBlob = undefined;
-        }
-      }),
-    );
-  }
+  await signClosets(closets);
 
   res.status(200).json(responseFactory.createResponse({ closets }, true));
 });
@@ -117,27 +74,7 @@ exports.updateCloset = catchAsync(async (req, res) => {
   );
   const closet = closetDoc.toObject();
 
-  if (closet.photoBlob) {
-    const key = closet.photoBlob;
-    const signedUrl = await getSignedImageUrl(key, 300, 'ubior-closet-photos');
-    closet.photoBlob = undefined;
-    closet.photo = signedUrl;
-  }
-
-  if (Array.isArray(closet.items)) {
-    await Promise.all(
-      closet.items.map(async (item) => {
-        if (!item?.photoBlob) return;
-
-        item.photo = await getSignedImageUrl(
-          item.photoBlob,
-          300,
-          'ubior-item-photos',
-        );
-        item.photoBlob = undefined;
-      }),
-    );
-  }
+  await signCloset(closet);
 
   res.status(200).json(responseFactory.createResponse({ closet }));
 });
@@ -155,27 +92,7 @@ exports.addItems = catchAsync(async (req, res) => {
   );
   const closet = closetDoc.toObject();
 
-  if (closet.photoBlob) {
-    const key = closet.photoBlob;
-    const signedUrl = await getSignedImageUrl(key, 300, 'ubior-closet-photos');
-    closet.photoBlob = undefined;
-    closet.photo = signedUrl;
-  }
-
-  if (Array.isArray(closet.items)) {
-    await Promise.all(
-      closet.items.map(async (item) => {
-        if (!item?.photoBlob) return;
-
-        item.photo = await getSignedImageUrl(
-          item.photoBlob,
-          300,
-          'ubior-item-photos',
-        );
-        item.photoBlob = undefined;
-      }),
-    );
-  }
+  await signCloset(closet);
 
   res.status(200).json(responseFactory.createResponse({ closet }));
 });
@@ -188,27 +105,7 @@ exports.removeItems = catchAsync(async (req, res) => {
   );
   const closet = closetDoc.toObject();
 
-  if (closet.photoBlob) {
-    const key = closet.photoBlob;
-    const signedUrl = await getSignedImageUrl(key, 300, 'ubior-closet-photos');
-    closet.photoBlob = undefined;
-    closet.photo = signedUrl;
-  }
-
-  if (Array.isArray(closet.items)) {
-    await Promise.all(
-      closet.items.map(async (item) => {
-        if (!item?.photoBlob) return;
-
-        item.photo = await getSignedImageUrl(
-          item.photoBlob,
-          300,
-          'ubior-item-photos',
-        );
-        item.photoBlob = undefined;
-      }),
-    );
-  }
+  await signCloset(closet);
 
   res.status(200).json(responseFactory.createResponse({ closet }));
 });

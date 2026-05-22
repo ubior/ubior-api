@@ -2,7 +2,7 @@ const itemService = require('../services/itemService');
 const responseFactory = require('../factories/responseFactory');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
-const getSignedImageUrl = require('../utils/getSignedImageUrl');
+const { signItem, signItems } = require('../utils/signPhotos');
 
 exports.getAllItems = catchAsync(async (req, res) => {
   const limit = Number.parseInt(req.query.limit, 10);
@@ -25,29 +25,7 @@ exports.getAllItems = catchAsync(async (req, res) => {
 
   const items = itemsDocs.map((doc) => doc.toObject());
 
-  if (items.length > 0) {
-    await Promise.all(
-      items.map(async (item) => {
-        if (item.photoBlob) {
-          item.photo = await getSignedImageUrl(
-            item.photoBlob,
-            300,
-            'ubior-item-photos',
-          );
-          item.photoBlob = undefined;
-        }
-
-        if (item.user?.photoBlob) {
-          item.user.photo = await getSignedImageUrl(
-            item.user.photoBlob,
-            300,
-            'ubior-user-photos',
-          );
-          item.user.photoBlob = undefined;
-        }
-      }),
-    );
-  }
+  await signItems(items, true);
 
   res.status(200).json(
     responseFactory.createResponse({
@@ -94,12 +72,7 @@ exports.finalizeItem = catchAsync(async (req, res) => {
     item = item.toObject();
   }
 
-  if (item.photoBlob) {
-    const key = item.photoBlob;
-    const signedUrl = await getSignedImageUrl(key, 300, 'ubior-item-photos');
-    item.photoBlob = undefined;
-    item.photo = signedUrl;
-  }
+  await signItem(item);
 
   res.status(201).json(responseFactory.createResponse({ item }));
 });
@@ -108,10 +81,7 @@ exports.getItem = catchAsync(async (req, res) => {
   const itemDoc = await itemService.getItem(req.params.itemId, req.user.id);
   const item = itemDoc.toObject();
 
-  const key = item.photoBlob;
-  const signedUrl = await getSignedImageUrl(key, 300, 'ubior-item-photos');
-  item.photoBlob = undefined;
-  item.photo = signedUrl;
+  await signItem(item);
 
   res.status(200).json(responseFactory.createResponse({ item }));
 });
