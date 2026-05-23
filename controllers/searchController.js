@@ -17,7 +17,7 @@ exports.search = catchAsync(async (req, res, next) => {
   let cursor = null;
   if (req.query.cursor) {
     try {
-      const json = Buffer.from(req.query.cursor, 'base64url').toString('uft8');
+      const json = Buffer.from(req.query.cursor, 'base64url').toString('utf8');
       cursor = JSON.parse(json);
     } catch {
       throw new AppError('Invalid cursor.', 400);
@@ -54,8 +54,7 @@ exports.search = catchAsync(async (req, res, next) => {
   }
 
   if (type === 'posts') {
-    const posts = raw.posts;
-    await signPosts(posts, req.user.id);
+    const posts = await signPosts(raw.posts, req.user.id);
     return res.status(200).json(
       responseFactory.createResponse(
         {
@@ -96,14 +95,10 @@ exports.search = catchAsync(async (req, res, next) => {
   }
 
   const users = raw.users.map((d) => d.toObject());
-  const posts = raw.posts;
+  const posts = await signPosts(raw.posts, req.user.id);
   const items = raw.items.map((d) => d.toObject());
 
-  await Promise.all([
-    signUsers(users),
-    signPosts(raw.posts, req.user.id),
-    signItems(items),
-  ]);
+  await Promise.all([signUsers(users), signItems(items)]);
 
   res.status(200).json(responseFactory.createResponse({ users, posts, items }));
 });
