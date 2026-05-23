@@ -9,6 +9,7 @@ const outfitRouter = require('./routes/outfitRoutes');
 const closetRouter = require('./routes/closetRoutes');
 const postRouter = require('./routes/postRoutes');
 const reportRouter = require('./routes/reportRoutes');
+const searchRouter = require('./routes/searchRoutes');
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./middlewares/errorHandler');
 
@@ -22,6 +23,7 @@ app.use('/api/v1/outfits', outfitRouter);
 app.use('/api/v1/closets', closetRouter);
 app.use('/api/v1/posts', postRouter);
 app.use('/api/v1/reports', reportRouter);
+app.use('/api/v1/search', searchRouter);
 
 app.all('*', (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));

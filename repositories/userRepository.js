@@ -5,6 +5,29 @@ const User = require('../models/userModel');
 const AppError = require('../utils/appError');
 
 class UserRepository {
+  async searchUsers(nameRegex, limit = null, cursor = null) {
+    const filter = {
+      $or: [{ name: nameRegex }, { username: nameRegex }],
+    };
+
+    if (cursor?._id) {
+      filter._id = { $lt: cursor._id };
+    }
+
+    let query = User.find(filter)
+      .sort({ _id: -1 })
+      .select('name username photoBlob private');
+
+    if (limit) query = query.limit(limit);
+
+    const users = await query;
+    const last = users.at(-1);
+    const nextCursor =
+      users.length === limit && last ? { _id: last._id.toString() } : null;
+
+    return { users, nextCursor };
+  }
+
   async create(userData) {
     return await User.create(userData);
   }

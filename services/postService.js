@@ -1,7 +1,7 @@
 const User = require('../models/userModel');
 const postRepository = require('../repositories/postRepository');
 const AppError = require('../utils/appError');
-const { signPost } = require('../utils/signPhotos');
+const { signPost, signPosts } = require('../utils/signPhotos');
 
 function shuffleInPlace(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -54,8 +54,7 @@ class PostService {
   async getFeed(userId, cursor, limit) {
     const docs = await postRepository.findFeedPage(userId, cursor, limit);
 
-    if (!Array.isArray(docs) || docs.length === 0) return;
-    const signedPosts = await Promise.all(docs.map((d) => signPost(d, userId)));
+    const signedPosts = await signPosts(docs, userId);
 
     shuffleInPlace(signedPosts);
 

@@ -38,7 +38,7 @@ exports.finalizeOutfit = catchAsync(async (req, res) => {
 });
 
 exports.getMyOutfits = catchAsync(async (req, res) => {
-  const search = req.body.search ?? null;
+  const search = req.query.q ?? null;
 
   const outfitsDocs = await outfitService.getMyOutfits(req.user.id, search);
   const outfits = outfitsDocs.map((doc) => doc.toObject());
