@@ -3,6 +3,57 @@ const Post = require('../models/postModel');
 const User = require('../models/userModel');
 
 class PostRepository {
+  async searchPosts(captionRegex, userId, limit = null, cursor = null) {
+    const me = await User.findById(userId).select('following');
+    if (!me) return [];
+
+    const followingIds = me.following || [];
+
+    const allowedAuthors = await User.find({
+      $or: [
+        { _id: userId },
+        { private: false },
+        { _id: { $in: followingIds } },
+      ],
+    }).select('_id');
+
+    const allowedAuthorIds = allowedAuthors.map((u) => u._id);
+
+    const filter = {
+      user: { $in: allowedAuthorIds },
+      caption: captionRegex,
+    };
+
+    if (cursor?.createdAt && cursor?._id) {
+      const cursorCreatedAt = new Date(cursor.createdAt);
+      filter.$or = [
+        { createdAt: { $it: cursorCreatedAt } },
+        { createdAt: cursorCreatedAt, _id: { $lt: cursor._id } },
+      ];
+    }
+
+    let query = Post.find(filter)
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(limit)
+      .populate({ path: 'user', select: 'name username photoBlob private' })
+      .populate({ path: 'item', select: 'name category photoBlob user' })
+      .populate({
+        path: 'outfit',
+        select: 'name category photoBlob user items',
+      });
+
+    if (limit) query = query.limit(limit);
+
+    const posts = await query;
+    const last = posts.at(-1);
+    const nextCursor =
+      posts.length === limit && last
+        ? { createdAt: last.createdAt.toISOString(), _id: last._id.toString() }
+        : null;
+
+    return { posts, nextCursor };
+  }
+
   async create(userId, data) {
     return await Post.create({ user: userId, ...data });
   }
