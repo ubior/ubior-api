@@ -60,8 +60,8 @@ const signPost = async (postDoc, userId) => {
 };
 
 const signPosts = async (posts, userId) => {
-  if (!Array.isArray(posts) || posts.length === 0) return;
-  await Promise.all(posts.map((post) => signPost(post, userId)));
+  if (!Array.isArray(posts) || posts.length === 0) return [];
+  return await Promise.all(posts.map((post) => signPost(post, userId)));
 };
 
 const signUser = async (user) => {
