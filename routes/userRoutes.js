@@ -6,10 +6,6 @@ const authController = require('../controllers/authController');
 const userController = require('../controllers/userController');
 const postController = require('../controllers/postController');
 
-const test = (req, res) => {
-  res.send('Hello World');
-};
-
 router.post(
   '/signup',
   photo.uploadPhoto,
@@ -19,10 +15,10 @@ router.post(
 );
 router.post('/login', authController.login);
 router.post('/refreshToken', authController.refreshToken);
-router.get('/logout', authController.logout);
+router.post('/logout', authController.logout);
 
-router.post('/forgotPassword', test);
-router.patch('/resetPassword/:token', test);
+// router.post('/forgotPassword', test);
+// router.patch('/resetPassword/:token', test);
 
 // Protect middleware
 router.use(auth.protect);
